@@ -1,0 +1,12 @@
+gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.url=https\://api.ecmwf.int/v1
+gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.key=test
+gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.email=test@test.com
+gr.cite.earthserver.xwcpsmars.mars.client.script.command=python
+gr.cite.earthserver.xwcpsmars.mars.client.script.file=/home/deploy/data/xwcps-mars/mars/mars_retrieve.py
+gr.cite.earthserver.xwcpsmars.mars.target.path=/home/deploy/data/xwcps-mars/mars/responses
+
+gr.cite.earthserver.xwcpsmars.rasdaman.endpoint=http\://localhost:8080/rasdaman/ows
+gr.cite.earthserver.xwcpsmars.rasdaman.script.command=python
+gr.cite.earthserver.xwcpsmars.rasdaman.script.file=/home/deploy/data/xwcps-mars/rasdaman/ingredients/wcst_import/wcst_import.py
+gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.path=/home/deploy/data/xwcps-mars/rasdaman/ingredients
+gr.cite.earthserver.xwcpsmars.rasdaman.response.path=/home/deploy/data/xwcps-mars/rasdaman/responses

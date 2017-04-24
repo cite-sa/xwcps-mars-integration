@@ -1,0 +1,42 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"	
+	xsi:schemaLocation="http://www.springframework.org/schema/beans	
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd">
+   
+	<context:property-placeholder location="WEB-INF/xwcps-mars.properties.prod" />
+
+	<bean id="marsClient" class="gr.cite.earthserver.xwcpsmars.mars.MarsClient">
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.url}" />
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.key}" />
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.email}" />
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.client.script.command}" />
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.client.script.file}" />
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.target.path}" />
+	</bean>
+
+	<bean id="rasdamanClient" class="gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient">
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint}" />
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.command}" />
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.file}" />
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.path}" />
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.response.path}" />
+	</bean>
+
+	<bean id="rasdamanConnector" class="gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanConnector">
+		<constructor-arg ref="rasdamanClient"/>
+	</bean>
+
+	<bean id="xwcpsMarsResource" class="gr.cite.earthserver.xwcpsmars.application.resources.XwcpsMarsResource">
+		<constructor-arg ref="marsClient"/>
+		<constructor-arg ref="rasdamanConnector"/>
+	</bean>
+
+	<context:annotation-config/>
+	<context:component-scan base-package="gr.cite.earthserver.xwcpsmars.application" />
+</beans>

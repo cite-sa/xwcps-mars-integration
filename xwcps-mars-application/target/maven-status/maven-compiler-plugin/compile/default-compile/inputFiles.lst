@@ -1,0 +1,13 @@
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/application/CORSResponseFilter.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/application/resources/XwcpsMarsResource.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/mars/XwcpsMarsMappings.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/mars/MarsClientException.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/mars/MarsClient.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/rasdaman/RasdamanClient.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/application/dto/XwcpsMarsResponse.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/mars/MarsRequest.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/application/XwcpsMarsApplication.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/application/dto/XwcpsMarsResponseEntity.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/rasdaman/RasdamanException.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/rasdaman/RasdamanConnector.java
+/home/kapostolopoulos/repositories/git/earthserver/xwcps-mars-integration/xwcps-mars-application/src/main/java/gr/cite/earthserver/xwcpsmars/mars/XwcpsMarsMapping.java
