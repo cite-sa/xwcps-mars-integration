@@ -55,6 +55,7 @@ DEFAULT: ('d' | 'D')('e' | 'E')('f' | 'F')('a' | 'A')('u' | 'U')('l' | 'L')('t' 
 DESCRIBE_COVERAGE: ('d' | 'D')('e' | 'E')('s' | 'S')('c' | 'C')('r' | 'R')('i' | 'I')('b' | 'B')('e' | 'E')('c' | 'C')('o' | 'O')('v' | 'V')('e' | 'E')('r' | 'R')('a' | 'A')('g' | 'G')('e' | 'E');
 DIVISION: '/';
 DOT: '.';
+DOTDOT: DOT DOT;
 ENCODE: ('e' | 'E')('n' | 'N')('c' | 'C')('o' | 'O')('d' | 'D')('e' | 'E');
 EQUAL: '=';
 EXP: ('e'|'E')('x'|'X')('p'|'P');
@@ -63,7 +64,7 @@ FALSE : ('F' | 'f')('A' | 'a')('L' | 'l')('S' | 's')('E' | 'e');
 GREATER_THAN: '>';
 GREATER_OR_EQUAL_THAN: '>=';
 IMAGINARY_PART: ('i'|'I')('m'|'M');
-IDENTIFIER:	('i'|'I')('d'|'D')('e'|'E')('n'|'N')('t'|'T')('i'|'i')('f'|'F')('i'|'I')('e'|'E')('r'|'R');
+IDENTIFIER:	('i'|'I')('d'|'D')('e'|'E')('n'|'N')('t'|'T')('i'|'I')('f'|'F')('i'|'I')('e'|'E')('r'|'R');
 CRSSET:	('c'|'C')('r'|'R')('s'|'S')('s'|'S')('e'|'E')('t'|'T');
 IMAGECRSDOMAIN: ('i'|'I')('m'|'M')('a'|'A')('g'|'G')('e'|'E')('c'|'C')('r'|'R')('s'|'S')('d'|'D')('o'|'O')('m'|'M')('a'|'A')('i'|'I')('n'|'N');
 IMAGECRS: ('i'|'I')('m'|'M')('a'|'A')('g'|'G')('e'|'E')('c'|'C')('r'|'R')('s'|'S');
@@ -126,3 +127,51 @@ STRING_LITERAL: '"' [a-zA-Z0-9!#$&.+-^_ ]+ '"';
 // extra params in JSON format
 EXTRA_PARAMS: '"' ( ESCAPED_QUOTE | ~('\n'|'\r') )*? '"';
 WS: [ \n\t\r]+ -> skip;
+
+//XPath
+AxisNameXpath:  'ancestor'
+  |  'ancestor-or-self'
+  |  'attribute'
+  |  'child'
+  |  'descendant'
+  |  'descendant-or-self'
+  |  'following'
+  |  'following-sibling'
+  |  'namespace'
+  |  'parent'
+  |  'preceding'
+  |  'preceding-sibling'
+  |  'self'
+  ;
+NodeType:  'comment'
+    |  'text'
+    |  'processing-instruction'
+    |  'node'
+    ;
+NCName  :  START_CHARS [a-zA-Z0-9_\-]*;
+fragment NUMBERS: [0-9];
+fragment START_CHARS: [a-zA-Z_];
+IMGCRSDOMAIN: ('i'|'I')('m'|'M')('g'|'G')('c'|'C')('r'|'R')('s'|'S')('d'|'D')('o'|'O')('m'|'M')('a'|'A')('i'|'I')('n'|'N');
+SIMPLE_IDENTIFIER: START_CHARS + ;
+SIMPLE_IDENTIFIER_WITH_NUMBERS: (START_CHARS | NUMBERS)+;
+
+DIV: ('d' | 'D')('i' | 'I')('v' | 'V');
+METADATA: ('m' | 'M')('e' | 'E')('t' | 'T')('a' | 'A')('d' | 'D')('a' | 'A')('t' | 'T')('a' | 'A');
+MOD: ('m'|'M')('o'|'O')('d'|'D');
+
+
+// xWCPS
+ASC: ('a'|'A')('s'|'S')('c'|'C');
+AT: '@';
+DESC: ('d'|'D')('e'|'E')('s'|'S')('c'|'C');
+DOUBLE_COLON: '::';
+GREATER_THAN_SLASH: '/>';
+ID:	('i'|'I')('d'|'D');
+LET: ('l'|'L')('e' | 'E')('t'|'T');
+LOWER_THAN_SLASH: '</';
+MIXED:('m'|'M')('i'|'I')('x'|'X')('e'|'E')('d'|'D');
+ORDERBY: ('o'|'O')('r'|'R')('d'|'D')('e'|'E')('r'|'R')('b'|'B')('y'|'Y');
+WRAP_RESULT: ('w'|'W')('r'|'R')('a'|'A')('p'|'P')'-'('r'|'R')('e'|'E')('s'|'S')('u'|'U')('l'|'L')('t'|'T');
+XPATH_LITERAL  :  '"' ~'"'* '"'
+  |  '\'' ~'\''* '\''
+  ;
