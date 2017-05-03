@@ -138,4 +138,42 @@ public class MarsRequest {
 	public void setType(String type) {
 		this.type = type;
 	}
+
+	public void setOptionsByID(String coverageId) {
+		this.classification = "ei";
+		this.dataset = "interim";
+		this.expver = "0001";
+		this.grid = "0.5/0.5";
+		this.stream = "oper";
+
+		switch (coverageId) {
+			case "temp2m": {
+				this.param = "167.128";
+			}
+			case "precipitation": {
+				this.param = "228.128";
+
+				this.levtype = "sfc";
+				this.type = "an";
+			}
+			case "sst": {
+				this.param = "34.128";
+
+				this.levtype = "sfc";
+				this.type = "an";
+			}
+			case "pl_t2m": {
+				this.param = "157.128";
+
+				this.levtype = "pl";
+				this.type = "an";
+			}
+			case "pl_relhum": {
+				this.param = "228.128";
+
+				this.levtype = "pl";
+				this.type = "fc";
+			}
+		}
+	}
 }

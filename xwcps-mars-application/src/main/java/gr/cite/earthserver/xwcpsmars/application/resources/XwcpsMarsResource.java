@@ -7,8 +7,11 @@ import gr.cite.earthserver.xwcpsmars.mars.MarsClient;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMapping;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMappings;
+import gr.cite.earthserver.xwcpsmars.mars.request.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanConnector;
 import gr.cite.earthserver.xwcpsmars.utils.WCSRequestParameters;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -29,17 +32,16 @@ import javax.ws.rs.core.UriInfo;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 
 @Component
 @Path("xwcps")
@@ -87,6 +89,29 @@ public class XwcpsMarsResource {
 
 		String marsTargetFilename = UUID.randomUUID().toString();
 		String rasdamanResponseFilename = UUID.randomUUID().toString();
+
+
+		String url = "http://earthserver.ecmwf.int/rasdaman/ows?service=WCS&version=2.0.1&request=GetCoverage&coverageId=temp2m&subset=Lat(53.0)&subset=Long(-1.0)";
+		List<NameValuePair> params = null;
+		try {
+			params = URLEncodedUtils.parse(new URI(url), "UTF-8");
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+
+		String coverageId, wcpsQuery;
+
+		String requestType = params.stream().filter(x -> x.getName().equals("request")).findFirst().get().getValue();
+		if (requestType.equals("GetCoverage")) {
+			coverageId = params.stream().filter(x -> x.getName().equals("coverageId")).findFirst().get().getValue();
+
+			MarsRequest marsRequest = new MarsRequest();
+			marsRequest.setParam("");
+		}
+		else if (requestType.equals("ProcessCoverages")) {
+			wcpsQuery =params.stream().filter(x -> x.getName().equals("query")).findFirst().get().getValue();
+			//We have to parse query here
+		}
 
 		try {
 			String mappingsJson = Resources.toString(Resources.getResource("xwcps-mars-mapping.json"), Charsets.UTF_8);
