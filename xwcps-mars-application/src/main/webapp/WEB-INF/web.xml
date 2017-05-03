@@ -27,10 +27,6 @@ http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
 			<param-value>gr.cite.earthserver.xwcpsmars.application.CORSResponseFilter</param-value>
 		</init-param>
 		<init-param>
-        <param-name>jersey.config.server.provider.packages</param-name>
-        <param-value>gr.cite.earthserver.xwcpsmars.application.CORSResponseFilter</param-value>
-    </init-param>
-		<init-param>
 			<param-name>javax.ws.rs.Application</param-name>
 			<param-value>gr.cite.earthserver.xwcpsmars.application.XwcpsMarsApplication</param-value>
 		</init-param>

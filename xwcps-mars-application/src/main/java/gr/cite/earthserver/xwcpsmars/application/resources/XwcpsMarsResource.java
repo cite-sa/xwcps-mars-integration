@@ -8,6 +8,7 @@ import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMapping;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMappings;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanConnector;
+import gr.cite.earthserver.xwcpsmars.utils.WCSRequestParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.File;
@@ -61,13 +63,23 @@ public class XwcpsMarsResource {
 
 	@GET
 	@Path("ping")
+	@Produces(MediaType.TEXT_PLAIN)
 	public Response ping() {
 		logger.info("ping-pong");
 		return Response.ok("pong").build();
 	}
 
-	@POST
+	@GET
 	@Path("request")
+	public Response request(@Context UriInfo requestUriInfo) {
+		MultivaluedMap<String, String> queryParams = requestUriInfo.getQueryParameters();
+		WCSRequestParameters requestParameters = new WCSRequestParameters(queryParams);
+		System.out.println(queryParams);
+		return Response.ok().build();
+	}
+
+	@POST
+	@Path("query")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response query(Map<String, String> xwcpsQuery) {
 		XwcpsMarsMapping requestMapping;
