@@ -42,6 +42,16 @@ public class MarsRequest {
 	@JsonProperty("type")
 	private String type;
 
+	@JsonProperty("target")
+	private String target;
+
+	public MarsRequest() {
+		this.classification = "ei";
+		this.dataset = "interim";
+		this.expver = "0001";
+		this.grid = "0.5/0.5";
+		this.stream = "oper";
+	}
 
 	public String getClassification() {
 		return classification;
@@ -139,7 +149,15 @@ public class MarsRequest {
 		this.type = type;
 	}
 
-	public void setOptionsByID(String coverageId) {
+	public String getTarget() {
+		return target;
+	}
+
+	public void setTarget(String target) {
+		this.target = target;
+	}
+
+	public void setParametersByCoverageId(String coverageId) {
 		this.classification = "ei";
 		this.dataset = "interim";
 		this.expver = "0001";
