@@ -2,17 +2,13 @@ package gr.cite.earthserver.xwcpsmars.mars;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.ByteStreams;
 import gr.cite.earthserver.xwcpsmars.mars.request.MarsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
@@ -21,7 +17,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class MarsClient {
+public class MarsClient implements MarsClientAPI {
 
 	private static final Logger logger = LoggerFactory.getLogger(MarsClient.class);
 	private static final ObjectMapper mapper = new ObjectMapper();

@@ -4,39 +4,32 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClient;
+import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMapping;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMappings;
 import gr.cite.earthserver.xwcpsmars.mars.request.MarsRequest;
-import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanConnector;
+import gr.cite.earthserver.xwcpsmars.rasdaman.FemmeRasdamanConnector;
+import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
+import gr.cite.earthserver.xwcpsmars.utils.MarsCoverageRegistration;
 import gr.cite.earthserver.xwcpsmars.utils.WCSRequestParameters;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
+import gr.cite.femme.client.FemmeClientException;
+import gr.cite.femme.client.FemmeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -53,14 +46,13 @@ public class XwcpsMarsResource {
 
 	@Context
 	private UriInfo uriInfo;
-
-	private MarsClient marsClient;
-	private RasdamanConnector rasdamanConnector;
+	private MarsClientAPI marsClient;
+	private FemmeRasdamanConnector femmeRasdamanConnector;
 
 	@Inject
-	public XwcpsMarsResource(MarsClient marsClient, RasdamanConnector rasdamanConnector) {
+	public XwcpsMarsResource(MarsClientAPI marsClient, FemmeRasdamanConnector femmeRasdamanConnector) {
 		this.marsClient = marsClient;
-		this.rasdamanConnector = rasdamanConnector;
+		this.femmeRasdamanConnector = femmeRasdamanConnector;
 	}
 
 	@GET
@@ -71,13 +63,75 @@ public class XwcpsMarsResource {
 		return Response.ok("pong").build();
 	}
 
+	@POST
+	@Path("register")
+	public Response register(MarsCoverageRegistration marsCoverageRegistration) {
+		String marsTargetFilename = UUID.randomUUID().toString();
+		try {
+			String marsTargetFile = this.marsClient.retrieve(marsTargetFilename, marsCoverageRegistration.getMarsRequest());
+			this.femmeRasdamanConnector.register(marsTargetFile, marsCoverageRegistration.getCoverageId());
+		} catch (MarsClientException | RasdamanException | CoverageRegistryException e) {
+			logger.error(e.getMessage(), e);
+			throw new WebApplicationException("Registration failed", e);
+		}
+
+		return Response.ok().build();
+	}
+
+	@POST
+	@Path("deregister/{coverageId}")
+	public Response deregister(@PathParam("coverageId") String coverageId) {
+		try {
+			this.femmeRasdamanConnector.deregister(coverageId);
+		} catch (CoverageRegistryException e) {
+			throw new WebApplicationException(e);
+		}
+		return Response.status(Response.Status.NOT_IMPLEMENTED).build();
+	}
+
 	@GET
 	@Path("request")
 	public Response request(@Context UriInfo requestUriInfo) {
-		MultivaluedMap<String, String> queryParams = requestUriInfo.getQueryParameters();
-		WCSRequestParameters requestParameters = new WCSRequestParameters(queryParams);
-		System.out.println(queryParams);
-		return Response.ok().build();
+		String marsTargetFilename = UUID.randomUUID().toString();
+		String rasdamanResponseFilename = UUID.randomUUID().toString();
+
+		try {
+			WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(requestUriInfo.getQueryParameters(), this.femmeRasdamanConnector);
+			MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
+
+			if (marsRequest != null) {
+				Runnable rasdamanIngestAndQuery = () -> {
+					try {
+						this.femmeRasdamanConnector.ingestAndQuery(wcsRequestParameters.getCoverageId(), requestUriInfo.getRequestUri().getQuery(), this.marsClient.getTargetPath() + "/" + marsTargetFilename,
+								rasdamanResponseFilename);
+					} catch (Exception e) {
+						logger.error(e.getMessage(), e);
+					}
+				};
+
+				//logger.info("WCPS query: " + xwcpsQuery);
+
+				Thread marsThread = new Thread(() -> {
+					try {
+						this.marsClient.retrieve(marsTargetFilename, marsRequest, rasdamanIngestAndQuery);
+					} catch (MarsClientException e) {
+						logger.error(e.getMessage(), e);
+					}
+				});
+				marsThread.start();
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
+		} catch (CoverageRegistryException e) {
+			logger.error(e.getMessage(), e);
+			throw new WebApplicationException(e);
+		}
+
+		return Response.ok(this.uriInfo.getBaseUriBuilder()
+				.path(XwcpsMarsResource.class).path("response").path(rasdamanResponseFilename)
+				.build().toASCIIString())
+				.build();
+
 	}
 
 	@POST
@@ -91,15 +145,15 @@ public class XwcpsMarsResource {
 		String rasdamanResponseFilename = UUID.randomUUID().toString();
 
 
-		String url = "http://earthserver.ecmwf.int/rasdaman/ows?service=WCS&version=2.0.1&request=GetCoverage&coverageId=temp2m&subset=Lat(53.0)&subset=Long(-1.0)";
+		/*String url = "http://earthserver.ecmwf.int/rasdaman/ows?service=WCS&version=2.0.1&request=GetCoverage&coverageId=temp2m&subset=Lat(53.0)&subset=Long(-1.0)";
 		List<NameValuePair> params = null;
 		try {
 			params = URLEncodedUtils.parse(new URI(url), "UTF-8");
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
-		}
+		}*/
 
-		String coverageId, wcpsQuery;
+		/*String coverageId, wcpsQuery;
 
 		String requestType = params.stream().filter(x -> x.getName().equals("request")).findFirst().get().getValue();
 		if (requestType.equals("GetCoverage")) {
@@ -111,7 +165,7 @@ public class XwcpsMarsResource {
 		else if (requestType.equals("ProcessCoverages")) {
 			wcpsQuery =params.stream().filter(x -> x.getName().equals("query")).findFirst().get().getValue();
 			//We have to parse query here
-		}
+		}*/
 
 		try {
 			String mappingsJson = Resources.toString(Resources.getResource("xwcps-mars-mapping.json"), Charsets.UTF_8);
@@ -125,7 +179,7 @@ public class XwcpsMarsResource {
 		if (requestMapping != null) {
 			Runnable rasdamanIngestionAndQuery = () -> {
 				try {
-					this.rasdamanConnector.ingestAndQuery(this.marsClient.getTargetPath() + "/" + marsTargetFilename, query, rasdamanResponseFilename);
+					this.femmeRasdamanConnector.ingestAndQuery("", this.marsClient.getTargetPath() + "/" + marsTargetFilename, query, rasdamanResponseFilename);
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
 				}
@@ -154,19 +208,16 @@ public class XwcpsMarsResource {
 	@GET
 	@Path("response/{filename}")
 	@Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_XML})
-	public Response result(@PathParam("filename") String filename) {
+	public Response response(@PathParam("filename") String filename) {
 		String rasdamanResponse;
 
-		File responseFile = new File(this.rasdamanConnector.getRasdamanResponsePath() + "/" + filename);
-		if (!responseFile.exists()) {
+		try (Stream<String> fileContents = Files.lines(Paths.get(this.femmeRasdamanConnector.getRasdamanResponsePath(), filename), StandardCharsets.UTF_8)) {
+			rasdamanResponse = fileContents.collect(Collectors.joining(""));
+		} catch (NoSuchFileException e) {
 			return Response.status(Response.Status.NOT_FOUND)
 					.entity("Rasdaman response not available yet. Please retry later")
 					.type(MediaType.TEXT_PLAIN)
 					.build();
-		}
-
-		try(Stream<String> fileContents = Files.lines(Paths.get(this.rasdamanConnector.getRasdamanResponsePath() + "/" + filename), StandardCharsets.UTF_8)) {
-			rasdamanResponse = fileContents.collect(Collectors.joining(""));
 		} catch (IOException e) {
 			return Response.serverError().entity(e.getMessage()).build();
 		}

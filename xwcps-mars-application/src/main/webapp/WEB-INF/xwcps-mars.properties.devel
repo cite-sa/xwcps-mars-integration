@@ -8,5 +8,9 @@ gr.cite.earthserver.xwcpsmars.mars.target.path=/home/kapostolopoulos/Desktop/xwc
 gr.cite.earthserver.xwcpsmars.rasdaman.endpoint=http\://earthserver.ecmwf.int/rasdaman/ows
 gr.cite.earthserver.xwcpsmars.rasdaman.script.command=python
 gr.cite.earthserver.xwcpsmars.rasdaman.script.file=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/wcst_import.py
+gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.name = ingredients_template.json
 gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.path=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/ingredients
+gr.cite.earthserver.xwcpsmars.rasdaman.registration.path=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/registration
 gr.cite.earthserver.xwcpsmars.rasdaman.response.path=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/responses
+
+gr.cite.earthserver.xwcpsmars.femme.endpoint=http://localhost:8090/femme-application-devel

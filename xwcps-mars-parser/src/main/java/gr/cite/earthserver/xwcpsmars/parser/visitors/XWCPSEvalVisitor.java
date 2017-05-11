@@ -1,6 +1,7 @@
 package gr.cite.earthserver.xwcpsmars.parser.visitors;
 
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser.*;
+import gr.cite.earthserver.xwcpsmars.mars.request.MarsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,128 +12,127 @@ public class XWCPSEvalVisitor extends WCPSEvalVisitor {
 
     }
 
-    @Override
-    public String visitXwcps(XwcpsContext ctx) {
-        return null;
+    public String getCoverageId() {
+        return super.getCoverageId();
     }
 
     @Override
-    public String visitXpath(XpathContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitOrderByClause(OrderByClauseContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitXpathForClause(XpathForClauseContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitXpathClause(XpathClauseContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitLetClause(LetClauseContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitXmlElement(XmlElementContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitOpenXmlElement(OpenXmlElementContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitOpenXmlWithClose(OpenXmlWithCloseContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitCloseXmlElement(CloseXmlElementContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitQuated(QuatedContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitXmlClause(XmlClauseContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitAttribute(AttributeContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitProcessingExpression(ProcessingExpressionContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitWrapResultClause(WrapResultClauseContext ctx) {
-        return null;
+    public MarsRequest visitXwcps(XwcpsContext ctx) {
+        return visitChildren(ctx);
     }
 
     /*@Override
-    public String visitIdentifier(IdentifierContext ctx) {
-        return null;
+    public MarsRequest visitXpath(XpathContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitOrderByClause(OrderByClauseContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitXpathForClause(XpathForClauseContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitXpathClause(XpathClauseContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitLetClause(LetClauseContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitXmlElement(XmlElementContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitOpenXmlElement(OpenXmlElementContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitOpenXmlWithClose(OpenXmlWithCloseContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitCloseXmlElement(CloseXmlElementContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitQuated(QuatedContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitXmlClause(XmlClauseContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitAttribute(AttributeContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitProcessingExpression(ProcessingExpressionContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitWrapResultClause(WrapResultClauseContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitBooleanXpathClause(BooleanXpathClauseContext ctx) {
+		return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitWhereClause(WhereClauseContext ctx) {
+		return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitMixedClause(MixedClauseContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitMetadataExpression(MetadataExpressionContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitSpecificIdInServerLabel(SpecificIdInServerLabelContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitAllCoveragesInServerLabel(AllCoveragesInServerLabelContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitAllCoveragesLabel(AllCoveragesLabelContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitSpecificIdLabel(SpecificIdLabelContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public MarsRequest visitForClause(ForClauseContext ctx) {
+        return visitChildren(ctx);
     }*/
-
-    @Override
-    public String visitBooleanXpathClause(BooleanXpathClauseContext ctx) {
-		return null;
-    }
-
-    @Override
-    public String visitWhereClause(WhereClauseContext ctx) {
-		return null;
-    }
-
-    @Override
-    public String visitMixedClause(MixedClauseContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitMetadataExpression(MetadataExpressionContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitSpecificIdInServerLabel(SpecificIdInServerLabelContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitAllCoveragesInServerLabel(AllCoveragesInServerLabelContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitAllCoveragesLabel(AllCoveragesLabelContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitSpecificIdLabel(SpecificIdLabelContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String visitForClause(ForClauseContext ctx) {
-        return null;
-    }
 }

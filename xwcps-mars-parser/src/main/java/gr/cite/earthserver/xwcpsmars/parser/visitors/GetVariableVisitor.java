@@ -1,3 +1,4 @@
+/*
 package gr.cite.earthserver.xwcpsmars.parser.visitors;
 
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSBaseVisitor;
@@ -22,3 +23,4 @@ public class GetVariableVisitor extends XWCPSBaseVisitor<Void> {
 		return variables;
 	}
 }
+*/

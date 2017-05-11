@@ -7,12 +7,11 @@ import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser.MainContext;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser.OrExprContext;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser.RelativeLocationPathContext;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser.StepContext;
+import gr.cite.earthserver.xwcpsmars.mars.request.MarsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
-public class XpathForClauseEvalVisitor extends XWCPSBaseVisitor<String> {
+public class XpathForClauseEvalVisitor extends XWCPSBaseVisitor<MarsRequest> {
 	private static final Logger logger = LoggerFactory.getLogger(XpathForClauseEvalVisitor.class);
 
 	public XpathForClauseEvalVisitor() {
@@ -20,37 +19,37 @@ public class XpathForClauseEvalVisitor extends XWCPSBaseVisitor<String> {
 	}
 
 	@Override
-	public String visitMain(MainContext ctx) {
-		return null;
+	public MarsRequest visitMain(MainContext ctx) {
+		return visitChildren(ctx);
 	}
 
 	@Override
-	public String visitRelativeLocationPath(RelativeLocationPathContext ctx) {
-		return null;
+	public MarsRequest visitRelativeLocationPath(RelativeLocationPathContext ctx) {
+		return visitChildren(ctx);
 	}
 
 	@Override
-	public String visitOrExpr(OrExprContext ctx) {
-		return null;
+	public MarsRequest visitOrExpr(OrExprContext ctx) {
+		return visitChildren(ctx);
 	}
 
 	@Override
-	public String visitAndExpr(AndExprContext ctx) {
-		return null;
+	public MarsRequest visitAndExpr(AndExprContext ctx) {
+		return visitChildren(ctx);
 	}
 
 	@Override
-	public String visitStep(StepContext ctx) {
-		return null;
+	public MarsRequest visitStep(StepContext ctx) {
+		return visitChildren(ctx);
 	}
 
 	@Override
-	public String visitEqualityExpr(EqualityExprContext ctx) {
-		return null;
+	public MarsRequest visitEqualityExpr(EqualityExprContext ctx) {
+		return visitChildren(ctx);
 	}
 
-	@Override
-	protected String aggregateResult(String aggregate, String nextResult) {
-		return null;
-	}
+	/*@Override
+	protected MarsRequest aggregateResult(MarsRequest aggregate, MarsRequest nextResult) {
+		return visitChildren(ctx);
+	}*/
 }

@@ -9,4 +9,5 @@ gr.cite.earthserver.xwcpsmars.rasdaman.endpoint=http\://localhost:8080/rasdaman/
 gr.cite.earthserver.xwcpsmars.rasdaman.script.command=python
 gr.cite.earthserver.xwcpsmars.rasdaman.script.file=/home/deploy/data/xwcps-mars/rasdaman/ingredients/wcst_import/wcst_import.py
 gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.path=/home/deploy/data/xwcps-mars/rasdaman/ingredients
+gr.cite.earthserver.xwcpsmars.rasdaman.registration.path=/home/deploy/data/xwcps-mars/rasdaman/registration
 gr.cite.earthserver.xwcpsmars.rasdaman.response.path=/home/deploy/data/xwcps-mars/rasdaman/responses
