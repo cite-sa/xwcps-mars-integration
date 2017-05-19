@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
-import gr.cite.earthserver.xwcpsmars.mars.request.MarsRequest;
+import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,11 +29,11 @@ public class MarsClientMock implements MarsClientAPI {
 	private String targetPath;
 
 	@Inject
-	public MarsClientMock(String marsEcmwfDataServerUrl, String marsEcmwfDataServerKey, String marsEcmwfDataServerEmail, String scriptCommand, String scriptFile, String targetPath) {
-		this.marsEcmwfDataServerInfo = new HashMap<>();
+	public MarsClientMock(String scriptCommand, String scriptFile, String targetPath, boolean debug) {
+		/*this.marsEcmwfDataServerInfo = new HashMap<>();
 		this.marsEcmwfDataServerInfo.put("url", marsEcmwfDataServerUrl);
 		this.marsEcmwfDataServerInfo.put("key", marsEcmwfDataServerKey);
-		this.marsEcmwfDataServerInfo.put("email", marsEcmwfDataServerEmail);
+		this.marsEcmwfDataServerInfo.put("email", marsEcmwfDataServerEmail);*/
 
 		this.scriptCommand = scriptCommand;
 		this.scriptFile = scriptFile;
@@ -90,6 +90,11 @@ public class MarsClientMock implements MarsClientAPI {
 	}
 
 	public void retrieve(String marsTargetFilename, Map<String, String> marsParameters, Runnable rasdamanRunnable) throws MarsClientException {
+
+	}
+
+	@Override
+	public void cleanupDebugFiles(String marsTargetFilename) throws MarsClientException {
 
 	}
 

@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>../xwcps-mars-parser</module>
+        <module>../xwcps-mars-engine</module>
         <module>../xwcps-mars-application</module>
     </modules>
 </project>

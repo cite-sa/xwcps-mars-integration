@@ -70,7 +70,7 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 	}
 
 	@Inject
-	public RasdamanClientMock(String rasdamanEndpoint, String rasdamanScriptCommand, String rasdamanScriptFile, String ingredientTemplateFileName, String rasdamanIngredientsPath, String rasdamanRegistrationPath, String rasdamanResponsePath) {
+	public RasdamanClientMock(String rasdamanEndpoint, String rasdamanScriptCommand, String rasdamanScriptFile, String ingredientTemplateFileName, String rasdamanIngredientsPath, String rasdamanRegistrationPath, String rasdamanResponsePath, boolean debug) {
 		this.rasdamanEndpoint = rasdamanEndpoint;
 		this.rasdamanScriptCommand = rasdamanScriptCommand;
 		this.rasdamanScriptFile = rasdamanScriptFile;
@@ -83,7 +83,7 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		this.rasdamanClient = ClientBuilder.newClient();
 	}
 
-	public String getRasdamanResponsePath() {
+	public String getResponsePath() {
 		return rasdamanResponsePath;
 	}
 
@@ -148,7 +148,8 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		return finalMetadata;
 	}
 
-	public void ingest(String coverageId, String wcpsQuery, String marsTargetFile, String rasdamanResponseFilename) throws RasdamanException {
+	@Override
+	public void ingest(String coverageId, String marsTargetFile, String rasdamanIngestionFilename) throws RasdamanException {
 		// Mars target file content
 		ByteArrayOutputStream marsOutput;
 		try {
@@ -161,7 +162,7 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		}
 
 		// Ingredient file
-		String ingredientFile = this.rasdamanIngredientsPath + "/" + rasdamanResponseFilename + "_ingredient.json";
+		String ingredientFile = this.rasdamanIngredientsPath + "/" + rasdamanIngestionFilename + "_ingredient.json";
 		try {
 			String ingredientsTemplate = Resources.toString(Resources.getResource(this.ingredientTemplateFileName), Charsets.UTF_8);
 
@@ -189,7 +190,7 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		}
 
 		// Ingest in Rasdaman
-		File log = new File(this.rasdamanResponsePath + "/" + rasdamanResponseFilename + ".log");
+		File log = new File(this.rasdamanResponsePath + "/" + rasdamanIngestionFilename + ".log");
 		try {
 			Files.write(log.toPath(), ("Ingesting MARS file " + marsTargetFile).getBytes());
 			logger.info("Ready to execute " + this.rasdamanScriptCommand + " " + this.rasdamanScriptFile + " " + ingredientFile);
@@ -197,20 +198,16 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		} catch (IOException e) {
 			throw new RasdamanException("Rasdaman ingestion failed", e);
 		}
-		logger.info("Ingestion " + rasdamanResponseFilename + " completed successfully");
+		logger.info("Ingestion " + rasdamanIngestionFilename + " completed successfully");
 
 	}
 
 	public void delete(String coverageId) throws RasdamanException {
-		try {
-			WCSResponse wcsCoverageResponse = this.wcsRequestBuilder.deleteCoverage().coverageId(coverageId).build().get();
-		} catch (WCSRequestException e) {
-			throw new RasdamanException("Coverage " + coverageId + " deletion failed");
-		}
+			this.wcsRequestBuilder.deleteCoverage().coverageId(coverageId).build();
 	}
 
-	public void query(String wcpsQuery, String rasdamanResponseFilename) throws RasdamanException {
-		logger.info("Querying rasdaman " + this.rasdamanEndpoint + wcpsQuery);
+	public void query(String coverageId, String wcpsQuery, String rasdamanResponseFilename) throws RasdamanException {
+		logger.info("Querying rasdaman [" + this.rasdamanEndpoint + "?" + wcpsQuery + "]");
 
 		String rasdamanResponse = "WCPS: " + wcpsQuery + ", rasdaman response file: " + rasdamanResponseFilename;
 		logger.info("Writing response to " + rasdamanResponseFilename);

@@ -1,6 +1,8 @@
-gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.url=https\://api.ecmwf.int/v1
-gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.key=test
-gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.email=test@test.com
+gr.cite.earthserver.xwcpsmars.debug=true
+
+#gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.url=https\://api.ecmwf.int/v1
+#gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.key=test
+#gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.email=test@test.com
 gr.cite.earthserver.xwcpsmars.mars.client.script.command=python
 gr.cite.earthserver.xwcpsmars.mars.client.script.file=/home/kapostolopoulos/Desktop/xwcps-mars/mars/mars_retrieve.py
 gr.cite.earthserver.xwcpsmars.mars.target.path=/home/kapostolopoulos/Desktop/xwcps-mars/mars/responses
@@ -8,9 +10,13 @@ gr.cite.earthserver.xwcpsmars.mars.target.path=/home/kapostolopoulos/Desktop/xwc
 gr.cite.earthserver.xwcpsmars.rasdaman.endpoint=http\://earthserver.ecmwf.int/rasdaman/ows
 gr.cite.earthserver.xwcpsmars.rasdaman.script.command=python
 gr.cite.earthserver.xwcpsmars.rasdaman.script.file=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/wcst_import.py
-gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.name = ingredients_template.json
-gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.path=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/ingredients
+gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.suffix=-ingredient-template.json
 gr.cite.earthserver.xwcpsmars.rasdaman.registration.path=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/registration
+gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/ingestion
 gr.cite.earthserver.xwcpsmars.rasdaman.response.path=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/responses
+
+#gr.cite.earthserver.xwcpsmars.registry.xpaths.retrieveCoverageMarsMetadataXPath=/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/gmlcov:metadata/text()
+#gr.cite.earthserver.xwcpsmars.registry.xpaths.retrieveCoverageMarsAxisCoefficientsXPath=/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis[gmlrgrid:gridAxesSpanned='$$AXIS_NAME_PLACEHOLDER$$']/gmlrgrid:coefficients/text()
+#gr.cite.earthserver.xwcpsmars.registry.xpaths.retrieveMarsCoverageAxisDiscreteValues=/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/gml:rangeSet/gml:rangeParameters/text()
 
 gr.cite.earthserver.xwcpsmars.femme.endpoint=http://localhost:8090/femme-application-devel
