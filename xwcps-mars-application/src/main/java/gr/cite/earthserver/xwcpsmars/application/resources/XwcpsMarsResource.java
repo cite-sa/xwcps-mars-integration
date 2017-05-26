@@ -62,7 +62,7 @@ public class XwcpsMarsResource {
 		return Response.ok("pong").build();
 	}
 
-	@POST
+	/*@POST
 	@Path("registrations")
 	public Response registerMarsCoverage(MarsCoverageRegistration marsCoverageRegistration) {
 		String marsTargetFile;
@@ -84,6 +84,36 @@ public class XwcpsMarsResource {
 		try {
 			this.coverageRegistryRasdamanConnector.register(marsCoverageRegistration.getCoverageId(), marsTargetFile);
 		} catch (RasdamanException | CoverageRegistryException e) {
+			logger.error(e.getMessage(), e);
+			throw new WebApplicationException("Registration failed", e);
+		}
+
+		return Response.ok().build();
+	}*/
+
+	@POST
+	@Path("registrations")
+	public Response registerMarsCoverage(MarsCoverageRegistration marsCoverageRegistration) {
+		/*String marsTargetFile;
+
+		if (marsCoverageRegistration.getMarsRequest() != null) {
+			String marsTargetFilename = UUID.randomUUID().toString();
+			try {
+				marsTargetFile = this.marsClient.retrieve(marsTargetFilename, marsCoverageRegistration.getMarsRequest());
+			} catch (MarsClientException e) {
+				logger.error(e.getMessage(), e);
+				throw new WebApplicationException("Registration failed", e);
+			}
+		} else if (marsCoverageRegistration.getMarsFilePath() != null) {
+			marsTargetFile = marsCoverageRegistration.getMarsFilePath();
+		} else {
+			throw new WebApplicationException("No MARS request or file path specified");
+		}*/
+
+		try {
+			String ingredientContent = mapper.writeValueAsString(marsCoverageRegistration.getIngredient());
+			this.coverageRegistryRasdamanConnector.register(marsCoverageRegistration.getCoverageId(), ingredientContent);
+		} catch (RasdamanException | CoverageRegistryException | JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
 			throw new WebApplicationException("Registration failed", e);
 		}
@@ -130,7 +160,11 @@ public class XwcpsMarsResource {
 		try {
 			WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(requestUriInfo.getQueryParameters(), this.coverageRegistryRasdamanConnector.getCoverageRegistryClient());
 			MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
-			logger.debug("Build MARS request [" + mapper.writeValueAsString(marsRequest) + "]");
+			try {
+				logger.debug("Build MARS request [" + mapper.writeValueAsString(marsRequest) + "]");
+			} catch (JsonProcessingException e) {
+				logger.error(e.getMessage(), e);
+			}
 
 			if (marsRequest != null) {
 				Runnable rasdamanIngestAndQuery = () -> {
@@ -156,9 +190,6 @@ public class XwcpsMarsResource {
 				return Response.status(Response.Status.NOT_FOUND).build();
 			}
 		} catch (CoverageRegistryException e) {
-			logger.error(e.getMessage(), e);
-			throw new WebApplicationException(e);
-		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
 			throw new WebApplicationException(e);
 		}

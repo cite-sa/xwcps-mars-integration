@@ -1,8 +1,9 @@
 package gr.cite.earthserver.xwcpsmars.parser.visitors;
 
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser.*;
-import gr.cite.earthserver.xwcpsmars.utils.AxisUtils;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
+import gr.cite.earthserver.xwcpsmars.utils.AxisUtils;
+import gr.cite.earthserver.xwcpsmars.mars.MarsRequest.MarsRequestBuilder;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryClient;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
 import org.slf4j.Logger;
@@ -21,12 +22,14 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
 
     private CoverageRegistryClient coverageRegistryClient;
 
-    private MarsRequest marsRequest;
+    private MarsRequestBuilder marsRequestBuilder;
 
     private String coverageId;
     private AxisUtils.CoordinatesAggregator coordinatesAggregator;
     private AxisUtils.DateTimeTransformation dateTimeTransformation;
     private AxisUtils.AxisRangeAggregator axisRangeAggregator;
+
+    private String timeAxisName;
 
     public WCPSEvalVisitor() {
 
@@ -34,26 +37,26 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
 
     public WCPSEvalVisitor(CoverageRegistryClient coverageRegistryClient) {
         this.coverageRegistryClient = coverageRegistryClient;
-        this.marsRequest = new MarsRequest();
     }
 
     public String getCoverageId() {
         return this.coverageId;
     }
 
-    @Override public MarsRequest visitSpecificIdLabel(SpecificIdLabelContext ctx) {
+    @Override public MarsRequestBuilder visitSpecificIdLabel(SpecificIdLabelContext ctx) {
         this.coverageId = ctx.COVERAGE_VARIABLE_NAME().getText();
+        this.marsRequestBuilder = MarsRequest.builder(this.coverageId);
         return visitChildren(ctx);
     }
 
     @Override
-    public MarsRequest visitEncodedCoverageExpressionLabel(EncodedCoverageExpressionLabelContext ctx) {
+    public MarsRequestBuilder visitEncodedCoverageExpressionLabel(EncodedCoverageExpressionLabelContext ctx) {
         visitChildren(ctx);
-        return this.marsRequest;
+        return this.marsRequestBuilder;
     }
 
     @Override
-    public MarsRequest visitCoverageExpressionShorthandTrimLabel(CoverageExpressionShorthandTrimLabelContext ctx) {
+    public MarsRequestBuilder visitCoverageExpressionShorthandTrimLabel(CoverageExpressionShorthandTrimLabelContext ctx) {
         /*for (int i = 0; i < ctx.getChildCount(); i ++) {
             System.out.println(ctx.getChild(i).getText());
         }*/
@@ -62,7 +65,7 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
 
 
     @Override
-    public MarsRequest visitDimensionIntervalListLabel(DimensionIntervalListLabelContext ctx) {
+    public MarsRequestBuilder visitDimensionIntervalListLabel(DimensionIntervalListLabelContext ctx) {
         this.coordinatesAggregator = new AxisUtils.CoordinatesAggregator();
         this.dateTimeTransformation = new AxisUtils.DateTimeTransformation();
 
@@ -75,25 +78,25 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
         this.coordinatesAggregator = null;
         this.dateTimeTransformation = null;
 
-        return this.marsRequest;
+        return this.marsRequestBuilder;
     }
 
     @Override
-    public MarsRequest visitTrimDimensionIntervalElementLabel(TrimDimensionIntervalElementLabelContext ctx) {
+    public MarsRequestBuilder visitTrimDimensionIntervalElementLabel(TrimDimensionIntervalElementLabelContext ctx) {
         processDimensionElements(ctx.axisName().getText(), ctx.coverageExpression().stream().map(CoverageExpressionContext::getText).collect(Collectors.toList()));
         visitChildren(ctx);
-        return this.marsRequest;
+        return this.marsRequestBuilder;
     }
 
     @Override
-    public MarsRequest visitSliceDimensionIntervalElementLabel(SliceDimensionIntervalElementLabelContext ctx) {
+    public MarsRequestBuilder visitSliceDimensionIntervalElementLabel(SliceDimensionIntervalElementLabelContext ctx) {
         processDimensionElements(ctx.axisName().getText(), Collections.singletonList(ctx.coverageExpression().getText()));
         visitChildren(ctx);
-        return this.marsRequest;
+        return this.marsRequestBuilder;
     }
 
     @Override
-    public MarsRequest visitDimensionPointListLabel(DimensionPointListLabelContext ctx) {
+    public MarsRequestBuilder visitDimensionPointListLabel(DimensionPointListLabelContext ctx) {
         this.coordinatesAggregator = new AxisUtils.CoordinatesAggregator();
         this.dateTimeTransformation = new AxisUtils.DateTimeTransformation();
 
@@ -106,14 +109,14 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
         this.coordinatesAggregator = null;
         this.dateTimeTransformation = null;
 
-        return this.marsRequest;
+        return this.marsRequestBuilder;
     }
 
     @Override
-    public MarsRequest visitDimensionPointElementLabel(DimensionPointElementLabelContext ctx) {
+    public MarsRequestBuilder visitDimensionPointElementLabel(DimensionPointElementLabelContext ctx) {
         processDimensionElements(ctx.axisName().getText(), Collections.singletonList(ctx.coverageExpression().getText()));
         visitChildren(ctx);
-        return this.marsRequest;
+        return this.marsRequestBuilder;
     }
 
     private void processDimensionElements(String axisName, List<String> coverageExpressions) {
@@ -129,37 +132,40 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
         } else {
             coverageExpressions = coverageExpressions.stream().map(dateTime -> dateTime.replaceFirst("^\"", "").replaceFirst("\"$", "")).collect(Collectors.toList());
             if (AxisUtils.DateTimeTransformation.isValidDateTime(coverageExpressions.get(0))) {
+                this.timeAxisName = axisName;
                 coverageExpressions.forEach(this.dateTimeTransformation::parseDateTime);
             } else {
                 // TODO process other axes
                 this.axisRangeAggregator = new AxisUtils.AxisRangeAggregator();
                 List<Integer> rangeSteps = null;
                 try {
-                    rangeSteps = this.coverageRegistryClient.retrieveMarsCoverageAxisDiscreteValues(this.coverageId, axisName).stream()
+                    rangeSteps = this.coverageRegistryClient.retrieveAxisDiscreteValues(this.coverageId, axisName).stream()
 							.map(Integer::parseInt).collect(Collectors.toList());
                 } catch (CoverageRegistryException e) {
                     logger.error(e.getMessage(), e);
                 }
                 coverageExpressions.stream().map(Integer::parseInt).forEach(this.axisRangeAggregator::addRangeLimit);
-                WCPSEvalVisitor.mapAxisNameToMarsParameter(axisName, this.axisRangeAggregator.buildMarsAxisRangeSteps(rangeSteps), marsRequest);
+                this.marsRequestBuilder.mapAxisNameToMarsField(axisName, this.axisRangeAggregator.limitAxisRangeSteps(rangeSteps));
             }
         }
     }
 
-    private static void mapAxisNameToMarsParameter(String axisName, String steps, MarsRequest marsRequest) {
-        switch (axisName) {
-            case "levelist":
-                marsRequest.setLevelist(steps);
-
-            case "step":
-                marsRequest.setStep(steps);
-        }
-    }
-
     private void buildMarsRequest() {
-        this.marsRequest.setArea(this.coordinatesAggregator.buildMarsArea());
-        this.marsRequest.setDate(this.dateTimeTransformation.buildMarsDate());
-        this.marsRequest.setTime(this.dateTimeTransformation.buildMarsTime());
+        this.marsRequestBuilder.area(this.coordinatesAggregator.buildMarsArea());
+
+        this.marsRequestBuilder.date(this.dateTimeTransformation.buildMarsDate());
+        if (this.dateTimeTransformation.isDateRange()) {
+            AxisUtils.DateTimeUtil dateTimeUtil = new AxisUtils.DateTimeUtil();
+            try {
+                dateTimeUtil.parseMarsDateTimeRange(this.coverageRegistryClient.retrieveAxisOriginPoint(this.coverageId, this.timeAxisName),
+						this.coverageRegistryClient.retrieveAxisCoefficients(this.coverageId, this.timeAxisName));
+            } catch (CoverageRegistryException e) {
+                logger.error(e.getMessage(), e);
+            }
+            marsRequestBuilder.time(dateTimeUtil.buildMarsRequestTimeSteps());
+        } else {
+            marsRequestBuilder.time(dateTimeTransformation.buildMarsTime());
+        }
     }
 
 

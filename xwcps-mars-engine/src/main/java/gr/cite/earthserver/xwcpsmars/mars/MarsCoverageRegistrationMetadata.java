@@ -29,6 +29,9 @@ public class MarsCoverageRegistrationMetadata {
 	@JsonProperty("Grib1_Parameter_name")
 	private String parameterName;
 
+	@JsonProperty("stream")
+	private String stream;
+
 	public String getType() {
 		return type;
 	}
@@ -83,5 +86,13 @@ public class MarsCoverageRegistrationMetadata {
 
 	public void setParameterName(String parameterName) {
 		this.parameterName = parameterName;
+	}
+
+	public String getStream() {
+		return stream;
+	}
+
+	public void setStream(String stream) {
+		this.stream = stream;
 	}
 }

@@ -27,37 +27,18 @@ public class MarsClient implements MarsClientAPI {
 
 	//private Map<String, String> marsEcmwfDataServerInfo;
 	private String scriptCommand;
-	private String scriptFile;
 	private String targetPath;
 
 	private boolean debug;
 
 	@Inject
-	public MarsClient(String scriptCommand, String scriptFile, String targetPath, boolean debug) throws MarsClientException {
-		this.scriptCommand = scriptCommand;
-		this.scriptFile = scriptFile;
-		this.targetPath = targetPath;
-
-		Path target = Paths.get(this.targetPath);
-		if (!Files.exists(target)){
-			try {
-				Files.createDirectories(target);
-			} catch (IOException e) {
-				throw new MarsClientException(e);
-			}
-		}
-
-		this.debug = debug;
-	}
-
-	public MarsClient(String marsEcmwfDataServerUrl, String marsEcmwfDataServerKey, String marsEcmwfDataServerEmail, String scriptCommand, String scriptFile, String targetPath, boolean debug) throws MarsClientException {
+	public MarsClient(String scriptCommand, String targetPath, boolean debug) throws MarsClientException {
 		/*this.marsEcmwfDataServerInfo = new HashMap<>();
 		this.marsEcmwfDataServerInfo.put("url", marsEcmwfDataServerUrl);
 		this.marsEcmwfDataServerInfo.put("key", marsEcmwfDataServerKey);
 		this.marsEcmwfDataServerInfo.put("email", marsEcmwfDataServerEmail);*/
 
 		this.scriptCommand = scriptCommand;
-		this.scriptFile = scriptFile;
 		this.targetPath = targetPath;
 
 		Path target = Paths.get(this.targetPath);
@@ -82,7 +63,6 @@ public class MarsClient implements MarsClientAPI {
 		Path marsTargetFile = Paths.get(this.targetPath, marsTargetFilename);
 		marsRequest.setTarget(marsTargetFile.toString());
 
-		//String marsEcmwfDataServerInfoJson, marsParametersJson;
 		String marsParametersJson;
 		try {
 			//marsEcmwfDataServerInfoJson = mapper.writeValueAsString(this.marsEcmwfDataServerInfo);
@@ -91,15 +71,12 @@ public class MarsClient implements MarsClientAPI {
 			throw new MarsClientException("MARS retrieval failed", e);
 		}
 
-		//ProcessBuilder processBuilder = new ProcessBuilder(this.scriptCommand, this.scriptFile, marsEcmwfDataServerInfoJson, marsParametersJson);
 		List<String> proccessArgs = new ArrayList<>(Arrays.asList(this.scriptCommand.split(" ")));
-		proccessArgs.add(this.scriptFile);
 		proccessArgs.add(marsParametersJson);
 
-		logger.debug("Process arguments are " + proccessArgs.stream().collect(Collectors.joining(" ")));
-
+		//ProcessBuilder processBuilder = new ProcessBuilder(this.scriptCommand, this.scriptFile, marsEcmwfDataServerInfoJson, marsParametersJson);
 		ProcessBuilder processBuilder = new ProcessBuilder(proccessArgs);
-		//ProcessBuilder processBuilder = new ProcessBuilder(this.scriptCommand, this.scriptFile, marsParametersJson);
+
 		processBuilder.directory(new File(this.targetPath));
 		processBuilder.redirectErrorStream(true);
 		File log = Paths.get(this.targetPath, marsTargetFilename + ".log").toFile();
@@ -155,8 +132,12 @@ public class MarsClient implements MarsClientAPI {
 			throw new MarsClientException("Mars retrieval failed", e);
 		}
 
+		List<String> proccessArgs = new ArrayList<>(Arrays.asList(this.scriptCommand.split(" ")));
+		proccessArgs.add(marsParametersJson);
+
 		//ProcessBuilder processBuilder = new ProcessBuilder(this.scriptCommand, this.scriptFile, marsEcmwfDataServerInfoJson, marsParametersJson);
-		ProcessBuilder processBuilder = new ProcessBuilder(this.scriptCommand, this.scriptFile, marsParametersJson);
+		ProcessBuilder processBuilder = new ProcessBuilder(proccessArgs);
+
 		processBuilder.directory(new File(this.targetPath));
 		processBuilder.redirectErrorStream(true);
 		File log = Paths.get(this.targetPath, marsTargetFilename + ".log").toFile();
@@ -167,7 +148,7 @@ public class MarsClient implements MarsClientAPI {
 
 		try {
 			Process process = processBuilder.start();
-			logger.info("Ready to execute " + this.scriptCommand + " " + this.scriptFile + " " + marsParametersJson);
+			logger.info("Ready to execute " + proccessArgs.stream().collect(Collectors.joining(" ")));
 
 			/*InputStream log = new BufferedInputStream(process.getInputStream());
 			FileOutputStream logFile = new FileOutputStream(this.targetPath + "/" + marsTargetFilename + ".log");
@@ -207,14 +188,6 @@ public class MarsClient implements MarsClientAPI {
 				throw new MarsClientException(e);
 			}
 		}
-	}
-
-	public static void main(String[] args) {
-		String test = "env http_proxy=http://proxy.ecmwf.int:3333 https_proxy=http://proxy.ecmwf.int:3333 no_proxy=127.0.0.1 python";
-		List<String> testList = Arrays.asList(test.split(" "));
-		/*testList.add("1");
-		testList.add("2");*/
-		testList.forEach(System.out::println);
 	}
 
 }

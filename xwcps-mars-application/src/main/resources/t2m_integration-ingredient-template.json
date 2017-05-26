@@ -4,7 +4,7 @@
     "tmp_directory": "/tmp/",
     "crs_resolver": "http://earthserver2d.ecmwf.int:8080/def/",
     "default_crs": "http://earthserver2d.ecmwf.int:8080/def/OGC/0/Index2D",
-    "mock": $MOCK_PLACEHOLDER$,
+    "mock": false,
     "automated": true,
     "retry": true,
     "retries": 1,
@@ -31,7 +31,8 @@
             "Grib1_Parameter_name": "'${grib:parameterName}'",
             "Grib1_Parameter_id": "'${grib:paramId}'",
             "MARS type": "'${grib:marsType}'",
-            "Type of level": "'${grib:typeOfLevel}'"
+            "Type of level": "'${grib:typeOfLevel}'",
+            "stream": "\"oper\""
           }
         },
         "slicer": {

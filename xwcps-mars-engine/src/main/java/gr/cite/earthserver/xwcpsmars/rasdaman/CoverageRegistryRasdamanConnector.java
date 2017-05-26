@@ -34,8 +34,13 @@ public class CoverageRegistryRasdamanConnector {
 		this.coverageRegistryClient.registerMarsCollection();
 	}
 
-	public void register(String coverageId, String marsTargetFile) throws RasdamanException, CoverageRegistryException {
+	/*public void register(String coverageId, String marsTargetFile) throws RasdamanException, CoverageRegistryException {
 		String registrationMetadata = this.rasdamanClient.register(coverageId, marsTargetFile);
+		this.coverageRegistryClient.register(coverageId, registrationMetadata);
+	}*/
+
+	public void register(String coverageId, String ingredientContent) throws RasdamanException, CoverageRegistryException {
+		String registrationMetadata = this.rasdamanClient.register(coverageId, ingredientContent);
 		this.coverageRegistryClient.register(coverageId, registrationMetadata);
 	}
 

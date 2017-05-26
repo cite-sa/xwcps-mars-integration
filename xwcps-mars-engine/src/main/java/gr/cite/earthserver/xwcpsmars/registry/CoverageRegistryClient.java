@@ -3,6 +3,8 @@ package gr.cite.earthserver.xwcpsmars.registry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.cite.earthserver.xwcpsmars.mars.MarsCoverageRegistrationMetadata;
+import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
+import gr.cite.earthserver.xwcpsmars.utils.CoordinatesEnvelope;
 import gr.cite.femme.client.FemmeClientException;
 import gr.cite.femme.client.FemmeException;
 import gr.cite.femme.client.api.FemmeClientAPI;
@@ -17,10 +19,12 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 public class CoverageRegistryClient {
@@ -30,9 +34,17 @@ public class CoverageRegistryClient {
 	private static final String COVERAGE_ID_PLACEHOLDER$ = "$$COVERAGE_ID_PLACEHOLDER$$";
 	private static final String AXIS_NAME_PLACEHOLDER = "$$AXIS_NAME_PLACEHOLDER$$";
 
+
 	private static final String COVERAGE_METADATA_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/gmlcov:metadata/text()";
-	private static final String AXIS_COEFFICIENTS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis[gmlrgrid:gridAxesSpanned='$$AXIS_NAME_PLACEHOLDER$$']/gmlrgrid:coefficients/text()";
+	private static final String ENVELOPE_AXIS_LABELS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='boundedBy']/*[local-name()='Envelope']/@axisLabels";
+	private static final String ENVELOPE_UPPER_CORNER_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='boundedBy']/*[local-name()='Envelope']/*[local-name()='upperCorner']/text()";
+	private static final String ENVELOPE_LOWER_CORNER_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='boundedBy']/*[local-name()='Envelope']/*[local-name()='lowerCorner']/text()";
+	//private static final String AXIS_COEFFICIENTS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis[gmlrgrid:gridAxesSpanned='$$AXIS_NAME_PLACEHOLDER$$']/gmlrgrid:coefficients/text()";
 	private static final String RANGE_PARAMETERS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/gml:rangeSet/gml:rangeParameters/text()";
+	private static final String ORIGIN_POINT_AXIS_LABELS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gml:origin/*[local-name()='Point']/@axisLabels";
+	private static final String ORIGIN_POINT_POS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gml:origin/*[local-name()='Point']/*[local-name()='pos']/text()";
+	private static final String AXIS_COEFFICIENTS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis[gmlrgrid:gridAxesSpanned='$$AXIS_NAME_PLACEHOLDER$$']/gmlrgrid:coefficients/text()";
+
 
 	private static final String MARS_COLLECTION_NAME = "MARS";
 	private static final String MARS_COLLECTION_ENDPOINT = "http://www.ecmwf.int";
@@ -127,16 +139,116 @@ public class CoverageRegistryClient {
 		}
 	}
 
-	public String retrieveMarsCoverageAxisCoefficients(String coverageId, String axisName) throws CoverageRegistryException {
+	public AxisEnvelope retrieveAxisEnvelope(String coverageId, String axisName) throws CoverageRegistryException {
 		try {
-			String xPath = CoverageRegistryClient.AXIS_COEFFICIENTS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId).replace(CoverageRegistryClient.AXIS_NAME_PLACEHOLDER, axisName);
-			return queryCoverageRegistryByXPath(xPath);
+			String axisLabelsXPath = CoverageRegistryClient.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String upperCornerXPath = CoverageRegistryClient.ENVELOPE_UPPER_CORNER_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String lowerCornerXPath = CoverageRegistryClient.ENVELOPE_LOWER_CORNER_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+
+			String[] axisLabels = queryCoverageRegistryByXPath(axisLabelsXPath).split(" ");
+			String[] upperCorner = queryCoverageRegistryByXPath(upperCornerXPath).split(" ");
+			String[] lowerCorner = queryCoverageRegistryByXPath(lowerCornerXPath).split(" ");
+
+			int axisIndex = -1;
+			for (int i = 0; i < axisLabels.length; i ++) {
+				if (axisLabels[i].equals(axisName)) {
+					axisIndex = i;
+					break;
+				}
+			}
+
+			if (axisIndex == -1) {
+				throw new CoverageRegistryException("No such axis exists [" + axisName + "]");
+			}
+
+			String axisLowerCorner = lowerCorner[axisIndex];
+			String axisUpperCorner = upperCorner[axisIndex];
+
+			return new AxisEnvelope(axisName, axisLowerCorner, axisUpperCorner);
+
 		} catch (FemmeException | FemmeClientException e) {
 			throw new CoverageRegistryException(e);
 		}
 	}
 
-	public List<String> retrieveMarsCoverageAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {
+	public CoordinatesEnvelope retrieveCoordinatesEnvelope(String coverageId) throws CoverageRegistryException {
+		try {
+			String axisLabelsXPath = CoverageRegistryClient.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String upperCornerXPath = CoverageRegistryClient.ENVELOPE_UPPER_CORNER_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String lowerCornerXPath = CoverageRegistryClient.ENVELOPE_LOWER_CORNER_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+
+			String[] axisLabels = queryCoverageRegistryByXPath(axisLabelsXPath).split(" ");
+			String[] upperCorner = queryCoverageRegistryByXPath(upperCornerXPath).split(" ");
+			String[] lowerCorner = queryCoverageRegistryByXPath(lowerCornerXPath).split(" ");
+
+			int latIndex = -1;
+			int longIndex = -1;
+			for (int i = 0; i < axisLabels.length; i ++) {
+				if (axisLabels[i].equals("Lat")) {
+					latIndex = i;
+				} else if (axisLabels[i].equals("Long")) {
+					longIndex = i;
+				}
+			}
+
+			if (latIndex == -1 || longIndex == -1) {
+				throw new CoverageRegistryException("No such axis exists [Lat/Long]");
+			}
+
+			Double latLowerCorner = Double.parseDouble(lowerCorner[latIndex]);
+			Double latUpperCorner = Double.parseDouble(upperCorner[latIndex]);
+			Double longLowerCorner = Double.parseDouble(lowerCorner[longIndex]);
+			Double longUpperCorner = Double.parseDouble(upperCorner[longIndex]);
+
+			return new CoordinatesEnvelope(latLowerCorner, latUpperCorner, longLowerCorner, longUpperCorner);
+
+		} catch (FemmeException | FemmeClientException e) {
+			throw new CoverageRegistryException(e);
+		}
+	}
+
+	public List<String> retrieveAxisCoefficients(String coverageId, String axisName) throws CoverageRegistryException {
+		try {
+			String xPath = CoverageRegistryClient.AXIS_COEFFICIENTS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId).replace(CoverageRegistryClient.AXIS_NAME_PLACEHOLDER, axisName);
+			return Arrays.asList(queryCoverageRegistryByXPath(xPath).split(" "));
+		} catch (FemmeException | FemmeClientException e) {
+			throw new CoverageRegistryException(e);
+		}
+	}
+
+	public String retrieveAxisOriginPoint(String coverageId, String axisName) throws CoverageRegistryException {
+		try {
+			String originPointXPath = CoverageRegistryClient.ORIGIN_POINT_POS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String originPoint = queryCoverageRegistryByXPath(originPointXPath);
+
+			String originPointAxisLabelsXPath = CoverageRegistryClient.ORIGIN_POINT_AXIS_LABELS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String originPointAxisLabels = queryCoverageRegistryByXPath(originPointAxisLabelsXPath);
+
+			int axisIndex = -1;
+			List<String> axisLabels = Arrays.asList(originPointAxisLabels.split(" "));
+			for (int i = 0; i < axisLabels.size(); i++) {
+				if (axisName.equals(axisLabels.get(i))) {
+					axisIndex = i;
+					break;
+				}
+			}
+
+			String axisOriginPoint;
+			if (axisIndex > -1) {
+				axisOriginPoint = originPoint.split(" ")[axisIndex];
+			} else {
+				throw new CoverageRegistryException("No axis label found [" + axisName + "]");
+			}
+
+			return axisOriginPoint;
+
+		} catch (FemmeException | FemmeClientException e) {
+			throw new CoverageRegistryException(e);
+		}
+	}
+
+	@Deprecated
+	public List<String> retrieveAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {
 		String range;
 		try {
 			String xPath = CoverageRegistryClient.RANGE_PARAMETERS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
@@ -178,132 +290,4 @@ public class CoverageRegistryClient {
 		return steps;
 	}
 
-	/*public static void main(String[] args) throws IOException, CoverageRegistryException {
-		CoverageRegistryClient registry = new CoverageRegistryClient();
-		List<String> discreteValues = registry.retrieveMarsCoverageAxisDiscreteValues(
-				"",
-				"isobaric",
-				"[{\"axes\": [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"1000\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 1}, {\"axes\": " +
-						"[{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"975\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 2}, {\"axes\": " +
-						"[{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"950\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 3}, {\"axes\": " +
-						"[{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"925\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 4}, {\"axes\": " +
-						"[{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"900\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 5}, {\"axes\": " +
-						"[{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"875\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 6}, {\"axes\": " +
-						"[{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"850\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 7}, {\"axes\": " +
-						"[{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"825\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 8}, {\"axes\": " +
-						"[{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"800\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 9}, {\"axes\": " +
-						"[{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"775\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 10}, {\"axes\":" +
-						" [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"750\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 11}, {\"axes\":" +
-						" [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"550\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 12}, {\"axes\":" +
-						" [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"500\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T00:00:00+00:00\\\"\"}], \"messageId\": 13}, {\"axes\":" +
-						" [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"1000\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T06:00:00+00:00\\\"\"}], \"messageId\": 14}, {\"axes\":" +
-						" [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"975\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T06:00:00+00:00\\\"\"}], \"messageId\": 15}, {\"axes\":" +
-						" [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"950\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T06:00:00+00:00\\\"\"}], \"messageId\": 16}, {\"axes\":" +
-						" [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"925\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T06:00:00+00:00\\\"\"}], \"messageId\": 17}, {\"axes\":" +
-						" [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"900\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T06:00:00+00:00\\\"\"}], \"messageId\": 18}, {\"axes\":" +
-						" [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"875\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T06:00:00+00:00\\\"\"}], \"messageId\": 19}, {\"axes\":" +
-						" [{\"name\": \"Lat\", \"min\": \"-90.25\", \"max\": \"90.25\", \"resolution\": \"-0.5\", " +
-						"\"type\": \"number\", \"order\": \"3\"}, {\"name\": \"Long\", \"min\": \"-180.25\", \"max\": " +
-						"\"179.75\", \"resolution\": \"0.5\", \"type\": \"number\", \"order\": \"2\"}, {\"type\": " +
-						"\"number\", \"order\": \"1\", \"resolution\": \"1\", \"name\": \"isobaric\", \"min\": " +
-						"\"850\"}, {\"type\": \"date\", \"order\": \"0\", \"resolution\": \"1\", \"name\": " +
-						"\"reftime\", \"min\": \"\\\"2015-01-01T06:00:00+00:00\\\"\"}], \"messageId\": 20}]"
-		);
-		discreteValues.forEach(System.out::println);
-	}*/
 }

@@ -1,7 +1,7 @@
 package gr.cite.earthserver.xwcpsmars.parser.visitors;
 
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser.*;
-import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
+import gr.cite.earthserver.xwcpsmars.mars.MarsRequest.MarsRequestBuilder;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,7 @@ public class XWCPSEvalVisitor extends WCPSEvalVisitor {
     }
 
     @Override
-    public MarsRequest visitXwcps(XwcpsContext ctx) {
+    public MarsRequestBuilder visitXwcps(XwcpsContext ctx) {
         return visitChildren(ctx);
     }
 

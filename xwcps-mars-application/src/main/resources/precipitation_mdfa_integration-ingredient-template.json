@@ -4,7 +4,7 @@
     "tmp_directory": "/tmp/",
     "crs_resolver": "http://earthserver2d.ecmwf.int:8080/def/",
     "default_crs": "http://earthserver2d.ecmwf.int:8080/def/OGC/0/Index2D",
-    "mock": false,
+    "mock": $MOCK_PLACEHOLDER$,
     "automated": true,
     "retry": true,
     "retries": 1,
@@ -22,7 +22,7 @@
     "name": "general_coverage",
     "options": {
       "coverage": {
-        "crs": "EPSG/0/4326@OGC/0/Index1D?axis-label=\"isobaric\"@OGC/0/AnsiDate?axis-label=\"reftime\"",
+        "crs": "EPSG/0/4326@OGC/0/Index1D?axis-label=\"steprange\"@OGC/0/AnsiDate?axis-label=\"reftime\"",
         "metadata": {
           "type": "json",
           "global": {
@@ -39,7 +39,7 @@
           "pixelIsPoint": true,
           "bands": [
             {
-              "name": "ERA-interim Temperature@isobaric surface",
+              "name": "Total_precipitation_forecast_surface",
               "identifier": "'${grib:cfVarName}'",
               "description": "'${grib:marsClass}'",
               "nilReason": "Nil value represents missing values.",
@@ -69,16 +69,16 @@
               "dataBound" : true,
               "resolution": "${grib:jDirectionIncrementInDegrees} if bool(${grib:jScansPositively}) else -${grib:jDirectionIncrementInDegrees}"
             },
-            "isobaric": {
-              "min": "${grib:level}",
+            "steprange": {
+              "min": "${grib:endStep}",
               "gridOrder": 1,
               "irregular": true,
-              "directPositions": "${grib:axis:isobaric}"
+              "directPositions": "${grib:axis:steprange}"
             }
           }
         }
       },
-      "tiling": "ALIGNED [0:0, 0:240, 0:180, 0:90]"
+      "tiling": "ALIGNED [0:0, 0:4, 0:180, 0:90]"
     }
   }
 }

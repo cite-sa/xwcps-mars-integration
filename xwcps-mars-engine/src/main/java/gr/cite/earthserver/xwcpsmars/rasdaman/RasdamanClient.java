@@ -8,6 +8,7 @@ import gr.cite.commons.utils.xml.exceptions.XMLConversionException;
 import gr.cite.commons.utils.xml.exceptions.XPathEvaluationException;
 import gr.cite.earthserver.wcs.core.WCSRequest;
 import gr.cite.earthserver.wcs.core.WCSRequestBuilder;
+import gr.cite.earthserver.xwcpsmars.utils.AxisUtils;
 import org.glassfish.jersey.uri.UriComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.xml.xpath.XPathFactoryConfigurationException;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -25,19 +27,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.time.ZonedDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class RasdamanClient implements RasdamanClientAPI {
 	private static final Logger logger = LoggerFactory.getLogger(RasdamanClient.class);
 
-	private static final String MOCK_PLACEHOLDER = "$MOCK_PLACEHOLDER$";
+	//private static final String MOCK_PLACEHOLDER = "$MOCK_PLACEHOLDER$";
 	private static final String COVERAGE_ID_PLACEHOLDER = "$COVERAGE_ID_PLACEHOLDER$";
 	private static final String COVERAGE_FILE_PLACEHOLDER = "$COVERAGE_FILE_PLACEHOLDER$";
 
@@ -46,9 +44,8 @@ public class RasdamanClient implements RasdamanClientAPI {
 	private static final String GMLCOV_METADATA_OPENING_TAG = "<gmlcov:metadata>";
 	private static final String GMLCOV_METADATA_CLOSING_TAG = "</gmlcov:metadata>";
 
-	private String endpoint;
+	//private String endpoint;
 	private String scriptCommand;
-	private String scriptFile;
 	private String ingredientTemplateFileNameSuffix;
 	private String registrationPath;
 	private String ingestionPath;
@@ -59,15 +56,10 @@ public class RasdamanClient implements RasdamanClientAPI {
 	private WebTarget webTarget;
 	private WCSRequestBuilder wcsRequestBuilder;
 
-	public RasdamanClient() {
-
-	}
-
 	@Inject
-	public RasdamanClient(String endpoint, String scriptCommand, String scriptFile, String ingredientTemplateFileNameSuffix, String registrationPath, String ingestionPath, String responsePath, boolean debug) throws RasdamanException {
-		this.endpoint = endpoint;
+	public RasdamanClient(String endpoint, String scriptCommand, String ingredientTemplateFileNameSuffix, String registrationPath, String ingestionPath, String responsePath, boolean debug) throws RasdamanException {
+		//this.endpoint = endpoint;
 		this.scriptCommand = scriptCommand;
-		this.scriptFile = scriptFile;
 		this.ingredientTemplateFileNameSuffix = ingredientTemplateFileNameSuffix;
 		this.registrationPath = registrationPath;
 		this.ingestionPath = ingestionPath;
@@ -75,8 +67,8 @@ public class RasdamanClient implements RasdamanClientAPI {
 
 		this.debug = debug;
 
-		this.wcsRequestBuilder = WCSRequest.newBuilder().endpoint(this.endpoint);
-		this.webTarget = ClientBuilder.newClient().target(this.endpoint);
+		this.wcsRequestBuilder = WCSRequest.newBuilder().endpoint(endpoint);
+		this.webTarget = ClientBuilder.newClient().target(endpoint);
 
 		Path rasdamanRegistration = Paths.get(this.registrationPath);
 		Path rasdamanIngestion = Paths.get(this.ingestionPath);
@@ -174,13 +166,31 @@ public class RasdamanClient implements RasdamanClientAPI {
 		return finalMetadata;
 	}*/
 
-	@Override
+	/*@Override
 	public String register(String coverageId, String marsTargetFile) throws RasdamanException {
 		String registrationFilename = UUID.randomUUID().toString();
 		Path registrationIngredientFilePath = Paths.get(this.registrationPath, registrationFilename + "_ingredient.json");
 		Path registrationLogFilePath = Paths.get(this.registrationPath, registrationFilename + ".log");
 
 		ingest(coverageId, marsTargetFile, registrationIngredientFilePath, registrationLogFilePath, true);
+		String finalMetadata = getRegistrationMetadata(registrationLogFilePath);
+
+		cleanupDebugFiles(registrationIngredientFilePath, registrationLogFilePath);
+
+		logger.info("Registration in Rasdaman " + registrationFilename + " completed successfully");
+
+		return finalMetadata;
+	}*/
+
+	@Override
+	public String register(String coverageId, String registrationIngredientContent) throws RasdamanException {
+		String registrationFilename = UUID.randomUUID().toString();
+		Path registrationIngredientFilePath = Paths.get(this.registrationPath, registrationFilename + "_ingredient.json");
+		Path registrationLogFilePath = Paths.get(this.registrationPath, registrationFilename + ".log");
+
+		logger.debug("Registering ingredient [" + registrationIngredientContent + "]");
+
+		ingest(registrationIngredientContent, registrationIngredientFilePath, registrationLogFilePath);
 		String finalMetadata = getRegistrationMetadata(registrationLogFilePath);
 
 		cleanupDebugFiles(registrationIngredientFilePath, registrationLogFilePath);
@@ -195,22 +205,27 @@ public class RasdamanClient implements RasdamanClientAPI {
 		Path ingestionIngredientFilePath = Paths.get(this.ingestionPath, ingestionFilename + "_ingredient.json");
 		Path ingestionLogFilePath = Paths.get(this.ingestionPath, ingestionFilename + ".log");
 
-		ingest(coverageId, marsTargetFile, ingestionIngredientFilePath, ingestionLogFilePath,false);
+		String ingestionIngredientContent;
+		try {
+			ingestionIngredientContent = Resources.toString(Resources.getResource(coverageId + this.ingredientTemplateFileNameSuffix), StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			throw new RasdamanException("Ingredient file creation failed", e);
+		}
+		ingestionIngredientContent = ingestionIngredientContent/*.replace(RasdamanClient.MOCK_PLACEHOLDER, Boolean.toString(false))*/
+				.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, coverageId)
+				.replace(RasdamanClient.COVERAGE_FILE_PLACEHOLDER, marsTargetFile);
+
+		ingest(ingestionIngredientContent, ingestionIngredientFilePath, ingestionLogFilePath);
+
 		logger.info("Ingestion " + ingestionFilename + " completed successfully");
 
 		cleanupDebugFiles(ingestionIngredientFilePath, ingestionLogFilePath);
 	}
 
-	private void ingest(String coverageId, String marsTargetFile, Path ingredientFilePath, Path logFilePath, boolean mock) throws RasdamanException {
+	private void ingest(String ingredientContent, Path ingredientFilePath, Path logFilePath) throws RasdamanException {
 		// Ingredient file
 		try {
-			String ingredientsTemplate = Resources.toString(Resources.getResource(coverageId + this.ingredientTemplateFileNameSuffix), StandardCharsets.UTF_8);
-
-			ingredientsTemplate = ingredientsTemplate.replace(RasdamanClient.MOCK_PLACEHOLDER, Boolean.toString(mock))
-					.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, coverageId)
-					.replace(RasdamanClient.COVERAGE_FILE_PLACEHOLDER, marsTargetFile);
-
-			Files.write(ingredientFilePath, Collections.singletonList(ingredientsTemplate), StandardCharsets.UTF_8);
+			Files.write(ingredientFilePath, Collections.singletonList(ingredientContent), StandardCharsets.UTF_8);
 			Set<PosixFilePermission> perms = new HashSet<>();
 			//add owners permission
 			perms.add(PosixFilePermission.OWNER_READ);
@@ -230,13 +245,17 @@ public class RasdamanClient implements RasdamanClientAPI {
 		}
 
 		// Ingest in Rasdaman
-		ProcessBuilder processBuilder = new ProcessBuilder(this.scriptCommand, this.scriptFile, ingredientFilePath.toString());
+		List<String> proccessArgs = new ArrayList<>(Arrays.asList(this.scriptCommand.split(" ")));
+		proccessArgs.add(ingredientFilePath.toString());
+
+		//ProcessBuilder processBuilder = new ProcessBuilder(this.scriptCommand, this.scriptFile, ingredientFilePath.toString());
+		ProcessBuilder processBuilder = new ProcessBuilder(proccessArgs);
 		processBuilder.directory(ingredientFilePath.getParent().toFile());
 		processBuilder.redirectErrorStream(true);
 		processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(logFilePath.toFile()));
 
 		try {
-			logger.debug("Ready to execute " + this.scriptCommand + " " + this.scriptFile + " " + ingredientFilePath.toString());
+			logger.debug("Ready to execute " + proccessArgs.stream().collect(Collectors.joining(" ")));
 			Process process = processBuilder.start();
 			int exitValue = process.waitFor();
 			if (exitValue != 0) {
@@ -276,7 +295,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 
 		for (String queryParam : wcpsQuery.split("&")) {
 			String[] param = queryParam.split("=");
-			rasdamanWebTarget = rasdamanWebTarget.queryParam(param[0], UriComponent.encode(param[1], UriComponent.Type.QUERY_PARAM));
+			rasdamanWebTarget = rasdamanWebTarget.queryParam(param[0], UriComponent.encode(param[1], UriComponent.Type.QUERY_PARAM_SPACE_ENCODED));
 		}
 
 		logger.info("Querying rasdaman [" + rasdamanWebTarget.getUri().toString() + "]");
@@ -284,17 +303,15 @@ public class RasdamanClient implements RasdamanClientAPI {
 		Response rasdamanResponse = rasdamanWebTarget.request(MediaType.APPLICATION_XML).get();
 		logger.info("Writing response to " + rasdamanResponseFilename);
 
-		//if (rasdamanResponse.getStatus() == 200) {
 		try {
 			Files.write(Paths.get(this.responsePath, rasdamanResponseFilename), Collections.singletonList(rasdamanResponse.readEntity(String.class)));
 		} catch (IOException e) {
 			throw new RasdamanException("Write rasdaman response to " + rasdamanResponseFilename + " failed", e);
 		}
-		//} else {
-		if (rasdamanResponse.getStatus() == 200) {
-			delete(coverageId);
-			logger.info("Deleted coverage from Rasdaman [" + coverageId + "]");
-		} else {
+
+		delete(coverageId);
+		logger.info("Deleted coverage from Rasdaman [" + coverageId + "]");
+		if (rasdamanResponse.getStatus() != 200) {
 			throw new RasdamanException("Rasdaman request " + wcpsQuery + " failed. " + rasdamanResponse.getStatusInfo().getReasonPhrase());
 		}
 
@@ -355,6 +372,43 @@ public class RasdamanClient implements RasdamanClientAPI {
 		return updateCoverageMetadata.substring(0, start)
 				+ insertCoverageMetadata
 				+ updateCoverageMetadata.substring(end, updateCoverageMetadata.length());
+	}
+
+	public static void main(String[] args) throws IOException {
+		/*List<String> dateTimes = new ArrayList<>();
+		//ZonedDateTime startDateTime = ZonedDateTime.parse("1979-01-01T00:00Z");
+		ZonedDateTime startDateTime = ZonedDateTime.parse("2015-01-01T00:00Z");
+		//ZonedDateTime endDateTime = ZonedDateTime.parse("1979-01-02T18:00Z");
+		ZonedDateTime endDateTime = ZonedDateTime.parse("2015-12-31T18:00:00.000Z");
+
+		dateTimes.add("[");
+
+		while (!startDateTime.isAfter(endDateTime)) {
+			String dateTime = "\"" + startDateTime.toString() + "\"";
+			if (!startDateTime.isEqual(endDateTime)) {
+				dateTime += ",";
+			}
+			dateTimes.add(dateTime);
+
+			startDateTime = startDateTime.plusHours(6);
+		}
+
+		dateTimes.add("]");
+
+
+		Path file = Paths.get("/home/kapostolopoulos/Desktop/", "datetimes.json");
+		if (!Files.exists(file)) {
+			Files.createFile(file);
+		}
+		BufferedWriter writer = Files.newBufferedWriter(file);
+		dateTimes.forEach(dateTime -> {
+			try {
+				writer.append(dateTime);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
+		writer.close();*/
 	}
 
 }

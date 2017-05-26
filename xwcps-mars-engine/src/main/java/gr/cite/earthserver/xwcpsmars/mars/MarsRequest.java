@@ -4,6 +4,12 @@ package gr.cite.earthserver.xwcpsmars.mars;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
+
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class MarsRequest {
 
@@ -54,7 +60,7 @@ public class MarsRequest {
 		this.dataset = "interim";
 		this.expver = "0001";
 		this.grid = "0.5/0.5";
-		this.step = "00";
+		//this.step = "00";
 		this.stream = "oper";
 	}
 
@@ -170,41 +176,112 @@ public class MarsRequest {
 		this.target = target;
 	}
 
-	public void setParametersByCoverageId(String coverageId) {
-		this.classification = "ei";
-		this.dataset = "interim";
-		this.expver = "0001";
-		this.grid = "0.5/0.5";
-		this.stream = "oper";
+	public static MarsRequestBuilder builder(String coverageId) {
+		return new MarsRequestBuilder(coverageId);
+	}
 
-		switch (coverageId) {
-			case "temp2m": {
-				this.param = "167.128";
+
+	public static class MarsRequestBuilder {
+
+		private String coverageId;
+		private MarsRequest marsRequest;
+
+		private MarsRequestBuilder(String coverageId) {
+			this.coverageId = coverageId;
+			this.marsRequest = new MarsRequest();
+		}
+
+		public MarsRequestBuilder classification(String classification) {
+			this.marsRequest.setClassification(classification);
+			return this;
+		}
+
+		public MarsRequestBuilder area(String area) {
+			this.marsRequest.setArea(area);
+			return this;
+		}
+
+		public MarsRequestBuilder dataset(String dataset) {
+			this.marsRequest.setDataset(dataset);
+			return this;
+		}
+
+		public MarsRequestBuilder date(String date) {
+			this.marsRequest.setDate(date);
+			return this;
+		}
+
+		public MarsRequestBuilder expver(String expver) {
+			this.marsRequest.setExpver(expver);
+			return this;
+		}
+
+		public MarsRequestBuilder grid(String grid) {
+			this.marsRequest.setGrid(grid);
+			return this;
+		}
+
+		public MarsRequestBuilder levelist(List<String> levelist) {
+			this.marsRequest.setLevelist(levelist.stream().collect(Collectors.joining("/")));
+			return this;
+		}
+
+		public MarsRequestBuilder levtype(String levtype) {
+			this.marsRequest.setLevtype("isobaricInhPa".equals(levtype) ? "pressure level" : levtype);
+			return this;
+		}
+
+		public MarsRequestBuilder param(String param) {
+			this.marsRequest.setParam(param);
+			return this;
+		}
+
+		public MarsRequestBuilder step(List<String> steps) {
+			this.marsRequest.setStep(steps.stream().map(step -> Integer.parseInt(step) < 10 ? "0" + step : step).collect(Collectors.joining("/")));
+			return this;
+		}
+
+		public MarsRequestBuilder stream(String stream) {
+			this.marsRequest.setStream(stream);
+			return this;
+		}
+
+		public MarsRequestBuilder time(String time) {
+			this.marsRequest.setTime(time);
+			return this;
+		}
+
+		public MarsRequestBuilder type(String type) {
+			this.marsRequest.setType(type);
+			return this;
+		}
+
+		public MarsRequestBuilder target(String target) {
+			this.marsRequest.setTarget(target);
+			return this;
+		}
+
+		public MarsRequest build() {
+			if ("analysis".equals(this.marsRequest.getType()) || "an".equals(this.marsRequest.getType())) {
+				marsRequest.setStep("00");
 			}
-			case "precipitation": {
-				this.param = "228.128";
 
-				this.levtype = "sfc";
-				this.type = "an";
+			if (this.coverageId.contains("mdfa")) {
+				this.marsRequest.setStream("mdfa");
+			} else if (this.coverageId.contains("moda")) {
+				this.marsRequest.setStream("moda");
 			}
-			case "sst": {
-				this.param = "34.128";
 
-				this.levtype = "sfc";
-				this.type = "an";
-			}
-			case "pl_t2m": {
-				this.param = "157.128";
+			return this.marsRequest;
+		}
 
-				this.levtype = "pl";
-				this.type = "an";
-			}
-			case "pl_relhum": {
-				this.param = "228.128";
-
-				this.levtype = "pl";
-				this.type = "fc";
+		public void mapAxisNameToMarsField(String axisName, List<String> steps) {
+			if ("pressurelev".equals(axisName) || "levelist".equals(axisName) || "isobaric".equals(axisName)) {
+				levelist(steps);
+			} else if ("step".equals(axisName) || "forecaststep".equals(axisName) ||  "steprange".equals(axisName)) {
+				step(steps);
 			}
 		}
+
 	}
 }

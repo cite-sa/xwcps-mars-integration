@@ -29,8 +29,8 @@ public class XwcpsParserTest {
 		ParseTree tree = parser.xwcps();
 
 		XWCPSEvalVisitor visitor = new XWCPSEvalVisitor();
-		MarsRequest marsRequest = visitor.visit(tree);
+		MarsRequest.MarsRequestBuilder marsRequestBuilder = visitor.visit(tree);
 		String coverageId = visitor.getCoverageId();
-		System.out.println(mapper.writeValueAsString(marsRequest));
+		System.out.println(mapper.writeValueAsString(marsRequestBuilder));
 	}
 }

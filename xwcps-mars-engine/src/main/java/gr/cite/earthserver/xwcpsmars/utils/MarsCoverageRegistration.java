@@ -10,11 +10,14 @@ public class MarsCoverageRegistration {
 	@JsonProperty("coverageId")
 	private String coverageId;
 
-	@JsonProperty("marsRequest")
+	@JsonProperty("ingredient")
+	private Object ingredient;
+
+	/*@JsonProperty("marsRequest")
 	private MarsRequest marsRequest;
 
 	@JsonProperty("marsFilePath")
-	private String marsFilePath;
+	private String marsFilePath;*/
 
 	public String getCoverageId() {
 		return coverageId;
@@ -24,7 +27,7 @@ public class MarsCoverageRegistration {
 		this.coverageId = coverageId;
 	}
 
-	public MarsRequest getMarsRequest() {
+	/*public MarsRequest getMarsRequest() {
 		return marsRequest;
 	}
 
@@ -38,5 +41,13 @@ public class MarsCoverageRegistration {
 
 	public void setMarsFilePath(String marsFilePath) {
 		this.marsFilePath = marsFilePath;
+	}*/
+
+	public Object getIngredient() {
+		return ingredient;
+	}
+
+	public void setIngredient(Object ingredient) {
+		this.ingredient = ingredient;
 	}
 }
