@@ -8,7 +8,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class MarsCoverageRegistrationMetadata {
 
-	@JsonProperty("MARS type")
+	@JsonProperty("MARS_type")
 	private String type;
 
 	@JsonProperty("Grib1_Parameter_id")
@@ -23,13 +23,13 @@ public class MarsCoverageRegistrationMetadata {
 	@JsonProperty("slices")
 	private List<String> slices;
 
-	@JsonProperty("Type of level")
+	@JsonProperty("Type_of_level")
 	private String levtype;
 
 	@JsonProperty("Grib1_Parameter_name")
 	private String parameterName;
 
-	@JsonProperty("stream")
+	@JsonProperty("MARS_stream")
 	private String stream;
 
 	public String getType() {
