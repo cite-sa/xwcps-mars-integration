@@ -12,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,6 +62,7 @@ public class MarsClient implements MarsClientAPI {
 
 	@Override
 	public String retrieve(String marsTargetFilename, MarsRequest marsRequest) throws MarsClientException {
+		Instant start = Instant.now();
 		Path marsTargetFile = Paths.get(this.targetPath, marsTargetFilename);
 		marsRequest.setTarget(marsTargetFile.toString());
 
@@ -108,6 +111,7 @@ public class MarsClient implements MarsClientAPI {
 			throw new MarsClientException("MARS retrieval failed", e);
 		}
 
+		logger.debug("MARS retrieval: [" + Duration.between(start, Instant.now()).toMillis() + "ms]");
 		return marsTargetFile.toString();
 	}
 

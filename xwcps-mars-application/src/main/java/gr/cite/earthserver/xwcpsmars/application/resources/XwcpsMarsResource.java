@@ -29,6 +29,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -159,7 +161,9 @@ public class XwcpsMarsResource {
 
 		try {
 			WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(requestUriInfo.getQueryParameters(), this.coverageRegistryRasdamanConnector.getCoverageRegistryClient());
+			Instant start = Instant.now();
 			MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
+			logger.debug("Query translation: [" + Duration.between(start, Instant.now()).toMillis() + "ms]");
 			try {
 				logger.debug("Build MARS request [" + mapper.writeValueAsString(marsRequest) + "]");
 			} catch (JsonProcessingException e) {

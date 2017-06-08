@@ -31,8 +31,7 @@ public class XwcpsMarsTest {
 	public void init() throws FemmeException, CoverageRegistryException, RasdamanException {
 		this.rasdamanClient = new RasdamanClient(
 				"http://earthserver.ecmwf.int/rasdaman/ows",
-				"python",
-				"/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/wcst_import.py",
+				"python /home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/wcst_import.py",
 				"ingredients_template.json",
 				"/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/ingredients",
 				"/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/registration",
