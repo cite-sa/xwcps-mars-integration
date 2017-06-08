@@ -94,94 +94,6 @@ public class RasdamanClient implements RasdamanClientAPI {
 		return responsePath;
 	}
 
-	/*public String register(String coverageId, String marsTargetFile) throws RasdamanException {
-		// Mars target file content
-		ByteArrayOutputStream marsOutput;
-		try {
-			byte[] marsFileContent;
-			marsFileContent = Files.readAllBytes(Paths.get(marsTargetFile));
-			marsOutput = new ByteArrayOutputStream();
-			marsOutput.write(marsFileContent);
-		} catch (IOException e) {
-			throw new RasdamanException("Accessing MARS target file " + marsTargetFile + " failed", e);
-		}
-
-		// Ingredient file
-		String rasdamanRegistrationFilename = UUID.randomUUID().toString();
-		Path registrationIngredientFile = Paths.get(this.registrationPath, rasdamanRegistrationFilename + "_ingredient.json");
-		try {
-			String registrationIngredientTemplate = Resources.toString(Resources.getResource(this.ingredientTemplateFileNameSuffix), Charsets.UTF_8);
-
-			registrationIngredientTemplate = registrationIngredientTemplate.replace(RasdamanClient.MOCK_PLACEHOLDER, "true")
-					.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, coverageId)
-					.replace(RasdamanClient.COVERAGE_FILE_PLACEHOLDER, marsTargetFile);
-
-			Files.write(registrationIngredientFile, Collections.singletonList(registrationIngredientTemplate), StandardCharsets.UTF_8);
-			Set<PosixFilePermission> perms = new HashSet<>();
-			// add owner permission
-			perms.add(PosixFilePermission.OWNER_READ);
-			perms.add(PosixFilePermission.OWNER_WRITE);
-			perms.add(PosixFilePermission.OWNER_EXECUTE);
-			// add group permissions
-			perms.add(PosixFilePermission.GROUP_READ);
-			perms.add(PosixFilePermission.GROUP_WRITE);
-			perms.add(PosixFilePermission.GROUP_EXECUTE);
-			// add others permissions
-			perms.add(PosixFilePermission.OTHERS_READ);
-			perms.add(PosixFilePermission.OTHERS_EXECUTE);
-
-			Files.setPosixFilePermissions(registrationIngredientFile, perms);
-		} catch (IOException e) {
-			throw new RasdamanException("Registration ingredient file " + registrationIngredientFile + " creation failed", e);
-		}
-
-		// Register in Rasdaman
-		ProcessBuilder processBuilder = new ProcessBuilder(this.scriptCommand, this.scriptFile, registrationIngredientFile.toString());
-		processBuilder.directory(new File(this.registrationPath));
-
-		File registrationLogFile = new File(Paths.get(this.registrationPath, rasdamanRegistrationFilename + ".log").toString());
-		processBuilder.redirectErrorStream(true);
-		processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(registrationLogFile));
-
-		try {
-			Process process = processBuilder.start();
-			logger.info("Ready to execute " + this.scriptCommand + " " + this.scriptFile + " " + registrationIngredientFile.toString());
-			int exitValue = process.waitFor();
-			if (exitValue == 0) {
-				logger.info("Registration for ingredient " + registrationIngredientFile + " completed");
-			} else {
-				throw new RasdamanException("Rasdaman ingestion failed. See " + registrationLogFile.getName() + " log file");
-			}
-		} catch (IOException | InterruptedException e) {
-			throw new RasdamanException("Rasdaman ingestion failed", e);
-		}
-
-		// Parse registration log file for WCS-T import metadata
-		String finalMetadata = getRegistrationMetadata(registrationLogFile.getPath());
-
-		logger.info("Registration " + rasdamanRegistrationFilename + " completed successfully");
-
-		cleanupDebugFiles(marsTargetFile, registrationIngredientFile.toString(), registrationLogFile.getPath());
-
-		return finalMetadata;
-	}*/
-
-	/*@Override
-	public String register(String coverageId, String marsTargetFile) throws RasdamanException {
-		String registrationFilename = UUID.randomUUID().toString();
-		Path registrationIngredientFilePath = Paths.get(this.registrationPath, registrationFilename + "_ingredient.json");
-		Path registrationLogFilePath = Paths.get(this.registrationPath, registrationFilename + ".log");
-
-		ingest(coverageId, marsTargetFile, registrationIngredientFilePath, registrationLogFilePath, true);
-		String finalMetadata = getRegistrationMetadata(registrationLogFilePath);
-
-		cleanupDebugFiles(registrationIngredientFilePath, registrationLogFilePath);
-
-		logger.info("Registration in Rasdaman " + registrationFilename + " completed successfully");
-
-		return finalMetadata;
-	}*/
-
 	@Override
 	public String register(String coverageId, String registrationIngredientContent) throws RasdamanException {
 		String registrationFilename = UUID.randomUUID().toString();
@@ -372,43 +284,6 @@ public class RasdamanClient implements RasdamanClientAPI {
 		return updateCoverageMetadata.substring(0, start)
 				+ insertCoverageMetadata
 				+ updateCoverageMetadata.substring(end, updateCoverageMetadata.length());
-	}
-
-	public static void main(String[] args) throws IOException {
-		/*List<String> dateTimes = new ArrayList<>();
-		//ZonedDateTime startDateTime = ZonedDateTime.parse("1979-01-01T00:00Z");
-		ZonedDateTime startDateTime = ZonedDateTime.parse("2015-01-01T00:00Z");
-		//ZonedDateTime endDateTime = ZonedDateTime.parse("1979-01-02T18:00Z");
-		ZonedDateTime endDateTime = ZonedDateTime.parse("2015-12-31T18:00:00.000Z");
-
-		dateTimes.add("[");
-
-		while (!startDateTime.isAfter(endDateTime)) {
-			String dateTime = "\"" + startDateTime.toString() + "\"";
-			if (!startDateTime.isEqual(endDateTime)) {
-				dateTime += ",";
-			}
-			dateTimes.add(dateTime);
-
-			startDateTime = startDateTime.plusHours(6);
-		}
-
-		dateTimes.add("]");
-
-
-		Path file = Paths.get("/home/kapostolopoulos/Desktop/", "datetimes.json");
-		if (!Files.exists(file)) {
-			Files.createFile(file);
-		}
-		BufferedWriter writer = Files.newBufferedWriter(file);
-		dateTimes.forEach(dateTime -> {
-			try {
-				writer.append(dateTime);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		});
-		writer.close();*/
 	}
 
 }
