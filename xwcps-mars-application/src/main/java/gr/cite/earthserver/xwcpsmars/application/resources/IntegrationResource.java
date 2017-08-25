@@ -10,7 +10,9 @@ import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMapping;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMappings;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.rasdaman.CoverageRegistryRasdamanConnector;
+import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryClient;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
 import gr.cite.earthserver.xwcpsmars.utils.MarsCoverageRegistration;
 import gr.cite.earthserver.xwcpsmars.utils.WCSRequestParameters;
@@ -36,7 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
-@Component
+//@Component
 @Path("xwcps")
 @Produces(MediaType.APPLICATION_JSON)
 public class XwcpsMarsResource {
@@ -47,12 +49,15 @@ public class XwcpsMarsResource {
 	@Context
 	private UriInfo uriInfo;
 	private MarsClientAPI marsClient;
+	private RasdamanClientAPI rasdamanClient;
+	private CoverageRegistryClient registryClient;
 	private CoverageRegistryRasdamanConnector coverageRegistryRasdamanConnector;
 
 	@Inject
-	public XwcpsMarsResource(MarsClientAPI marsClient, CoverageRegistryRasdamanConnector
-			coverageRegistryRasdamanConnector) {
+	public XwcpsMarsResource(MarsClientAPI marsClient, RasdamanClientAPI rasdamanClient, CoverageRegistryClient registryClient, CoverageRegistryRasdamanConnector coverageRegistryRasdamanConnector) {
 		this.marsClient = marsClient;
+		this.rasdamanClient = rasdamanClient;
+		this.registryClient = registryClient;
 		this.coverageRegistryRasdamanConnector = coverageRegistryRasdamanConnector;
 	}
 
@@ -160,10 +165,12 @@ public class XwcpsMarsResource {
 		String requestId = UUID.randomUUID().toString();
 
 		try {
-			WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(requestUriInfo.getQueryParameters(), this.coverageRegistryRasdamanConnector.getCoverageRegistryClient());
-			Instant start = Instant.now();
+			WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(requestUriInfo.getQueryParameters(), this.registryClient);
+			long translationStart = System.currentTimeMillis();
 			MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
-			logger.debug("Query translation: [" + Duration.between(start, Instant.now()).toMillis() + "ms]");
+			long translationEnd = System.currentTimeMillis();
+			logger.debug("Query translation time [" + (translationEnd - translationStart) + "ms]");
+
 			try {
 				logger.debug("Build MARS request [" + mapper.writeValueAsString(marsRequest) + "]");
 			} catch (JsonProcessingException e) {
@@ -171,20 +178,9 @@ public class XwcpsMarsResource {
 			}
 
 			if (marsRequest != null) {
-				Runnable rasdamanIngestAndQuery = () -> {
-					try {
-						this.coverageRegistryRasdamanConnector.ingestAndQuery(
-								wcsRequestParameters.getCoverageId(), requestUriInfo.getRequestUri().getQuery(),
-								Paths.get(this.marsClient.getTargetPath(), requestId).toString(),
-								requestId);
-					} catch (Exception e) {
-						logger.error(e.getMessage(), e);
-					}
-				};
-
 				Thread marsThread = new Thread(() -> {
 					try {
-						this.marsClient.retrieve(requestId, marsRequest, rasdamanIngestAndQuery);
+						this.marsClient.retrieve(requestId, marsRequest, ingestAndQueryRasdamanCallback(requestId, wcsRequestParameters, requestUriInfo));
 					} catch (MarsClientException e) {
 						logger.error(e.getMessage(), e);
 					}
@@ -198,11 +194,7 @@ public class XwcpsMarsResource {
 			throw new WebApplicationException(e);
 		}
 
-		return Response.ok(this.uriInfo.getBaseUriBuilder()
-				.path(XwcpsMarsResource.class).path("response").path(requestId)
-				.build().toASCIIString())
-				.build();
-
+		return Response.ok(this.uriInfo.getBaseUriBuilder().path(XwcpsMarsResource.class).path("response").path(requestId).build().toASCIIString()).build();
 	}
 
 	@GET
@@ -228,12 +220,42 @@ public class XwcpsMarsResource {
 			throw new WebApplicationException(e);
 		}
 
-		return Response.ok()
-				.entity(rasdamanResponse)
-				.type(MediaType.APPLICATION_XML)
-				.build();
+		return Response.ok().entity(rasdamanResponse).type(MediaType.APPLICATION_XML).build();
 	}
 
+	private Runnable ingestAndQueryRasdamanCallback(String requestId, WCSRequestParameters wcsRequestParameters, UriInfo requestUriInfo) {
+		return () -> {
+
+			long ingestionStart = System.currentTimeMillis();
+			try {
+				this.rasdamanClient.ingest(wcsRequestParameters.getCoverageId(), Paths.get(this.marsClient.getTargetPath(), requestId).toString(), requestId);
+			} catch (RasdamanException e) {
+				throw new RuntimeException(e);
+			}
+			long ingestionEnd = System.currentTimeMillis();
+			logger.debug("Rasdaman ingestion execution time (ms) [" + (ingestionEnd - ingestionStart) + "]");
+
+			long queryStart = System.currentTimeMillis();
+			try {
+				this.rasdamanClient.query(requestUriInfo.getRequestUri().getQuery(), requestId);
+			} catch (RasdamanException e) {
+				throw new RuntimeException(e);
+			}
+			long queryEnd = System.currentTimeMillis();
+			logger.debug("Rasdaman query execution time (ms) [" + (queryEnd - queryStart) + "]");
+
+			/*try {
+				this.coverageRegistryRasdamanConnector.ingestAndQuery(
+						wcsRequestParameters.getCoverageId(), requestUriInfo.getRequestUri().getQuery(),
+						Paths.get(this.marsClient.getTargetPath(), requestId).toString(),
+						requestId);
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}*/
+		};
+	}
+
+	@Deprecated
 	@POST
 	@Path("query")
 	@Consumes(MediaType.APPLICATION_JSON)
