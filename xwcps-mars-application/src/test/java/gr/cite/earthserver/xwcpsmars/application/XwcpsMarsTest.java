@@ -28,8 +28,8 @@ public class XwcpsMarsTest {
 	private FemmeClientAPI femmeClient;
 	private CoverageRegistryClient coverageRegistryClient;
 
-	@Before
-	public void init() throws FemmeException, CoverageRegistryException, IOException {
+//	@Before
+	public void init() throws FemmeException, CoverageRegistryException, RasdamanException {
 		this.rasdamanClient = new RasdamanClient(
 				"http://earthserver.ecmwf.int/rasdaman/ows",
 				"python /home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/wcst_import.py",
@@ -202,7 +202,7 @@ public class XwcpsMarsTest {
 		System.out.println(marsCoverageId);
 	}
 
-	@Test
+//	@Test
 	public void requestFromFemme() throws CoverageRegistryException {
 		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
 		map.add("service", "WCS");
