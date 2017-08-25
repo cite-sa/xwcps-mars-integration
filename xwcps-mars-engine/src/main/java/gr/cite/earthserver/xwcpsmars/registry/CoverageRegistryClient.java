@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.cite.earthserver.xwcpsmars.mars.MarsCoverageRegistrationMetadata;
 import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 import gr.cite.earthserver.xwcpsmars.utils.CoordinatesEnvelope;
+import gr.cite.femme.client.FemmeClient;
 import gr.cite.femme.client.FemmeClientException;
 import gr.cite.femme.client.FemmeException;
 import gr.cite.femme.client.api.FemmeClientAPI;
@@ -81,7 +82,7 @@ public class CoverageRegistryClient {
 	public void register(String coverageId, String coverageMetadata) throws CoverageRegistryException {
 		registerMarsCollection();
 		try {
-			this.marsCollectionId = this.femmeClient.getCollectionByName(CoverageRegistryClient.MARS_COLLECTION_NAME).getId();
+			//this.marsCollectionId = this.femmeClient.getCollectionByName(CoverageRegistryClient.MARS_COLLECTION_NAME).getId();
 
 			DataElement coverage = new DataElement();
 			coverage.setName(coverageId);
@@ -96,7 +97,7 @@ public class CoverageRegistryClient {
 
 			logger.debug("Register MARS coverage [" + coverage.getName() + "] in collection [" + this.marsCollectionId + "]");
 			this.femmeClient.addToCollection(coverage, this.marsCollectionId);
-		} catch (FemmeException | FemmeClientException e) {
+		} catch (FemmeException e) {
 			throw new CoverageRegistryException(e.getMessage(), e);
 		}
 	}
@@ -124,6 +125,7 @@ public class CoverageRegistryClient {
 	}
 
 	private String queryCoverageRegistryByXPath(String xPath) throws FemmeClientException, FemmeException, CoverageRegistryException {
+		logger.debug("XPath [" + xPath + "]");
 		return this.femmeClient.getDataElementsInMemoryXPath(null, null, xPath)
 				.stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No coverage satisfying XPath [" + xPath + "]"))
 				.getMetadata().stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No metadata satisfying XPath [" + xPath + "]")).getValue();
@@ -288,6 +290,12 @@ public class CoverageRegistryClient {
 			steps = dates.stream().sorted().map(ZonedDateTime::toString).collect(Collectors.toList());
 		}
 		return steps;
+	}
+
+	public static void main(String[] args) throws CoverageRegistryException, FemmeException, FemmeClientException {
+		CoverageRegistryClient client = new CoverageRegistryClient(new FemmeClient("http://localhost:8080/femme-application-devel"));
+		String response = client.queryCoverageRegistryByXPath("//wcs:CoverageDescription[@gml:id='ECMWF_SST_4326_05']");
+		System.out.println(response);
 	}
 
 }

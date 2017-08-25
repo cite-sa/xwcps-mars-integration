@@ -278,7 +278,7 @@ public class MarsRequest {
 		public void mapAxisNameToMarsField(String axisName, List<String> steps) {
 			if ("pressurelev".equals(axisName) || "levelist".equals(axisName) || "isobaric".equals(axisName)) {
 				levelist(steps);
-			} else if ("step".equals(axisName) || "forecaststep".equals(axisName) ||  "steprange".equals(axisName)) {
+			} else if ("step".equals(axisName) || "forecaststep".equals(axisName) || "steprange".equals(axisName)) {
 				step(steps);
 			}
 		}

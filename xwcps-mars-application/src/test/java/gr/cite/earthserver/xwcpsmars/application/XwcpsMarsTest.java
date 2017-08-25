@@ -18,6 +18,7 @@ import org.junit.Test;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+import java.io.IOException;
 import java.util.Collections;
 
 public class XwcpsMarsTest {
@@ -28,7 +29,7 @@ public class XwcpsMarsTest {
 	private CoverageRegistryClient coverageRegistryClient;
 
 	@Before
-	public void init() throws FemmeException, CoverageRegistryException, RasdamanException {
+	public void init() throws FemmeException, CoverageRegistryException, IOException {
 		this.rasdamanClient = new RasdamanClient(
 				"http://earthserver.ecmwf.int/rasdaman/ows",
 				"python /home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/wcst_import.py",

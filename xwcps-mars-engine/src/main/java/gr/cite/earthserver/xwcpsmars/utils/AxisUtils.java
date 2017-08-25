@@ -149,6 +149,7 @@ public class AxisUtils {
 
 	public static final class AxisRangeAggregator {
 		private List<Integer> rangeLimits = new ArrayList<>();
+		private List<Integer> limitedRangeSteps = new ArrayList<>();
 
 		public List<Integer> getRangeLimits() {
 			return rangeLimits;
@@ -162,14 +163,28 @@ public class AxisUtils {
 			this.rangeLimits.add(rangeLimit);
 		}
 
-		public List<String> limitAxisRangeSteps(List<Integer> rangeSteps) {
+		public List<Integer> getLimitedRangeSteps() {
+			return this.limitedRangeSteps;
+		}
+
+		public List<String> stringifyAndGetLimitedRangeSteps() {
+			return this.limitedRangeSteps.stream().map(Object::toString).collect(Collectors.toList());
+		}
+
+		public void limitAxisRangeSteps(List<Integer> rangeSteps) {
 			this.rangeLimits.sort(Comparator.naturalOrder());
-			List<String> steps = rangeSteps.stream().sorted(Comparator.naturalOrder())
-					.filter(rangeStep -> rangeStep >= this.rangeLimits.get(0) && rangeStep <= this.rangeLimits.get(1))
-					.map(Object::toString)
+			this.limitedRangeSteps = rangeSteps.stream().sorted(Comparator.naturalOrder())
+					.filter(rangeStep -> {
+						if (this.rangeLimits.size() == 1) {
+							return rangeStep == this.rangeLimits.get(0);
+						} else if (this.rangeLimits.size() == 2) {
+							return rangeStep >= this.rangeLimits.get(0) && rangeStep <= this.rangeLimits.get(1);
+						}
+						return false;
+					})
 					.collect(Collectors.toList());
-			logger.debug("Final steps [" + steps + "]");
-			return steps;
+
+			logger.debug("Final steps [" + this.limitedRangeSteps + "]");
 		}
 	}
 

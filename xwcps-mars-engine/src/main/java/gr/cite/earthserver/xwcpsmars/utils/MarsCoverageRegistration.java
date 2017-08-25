@@ -13,12 +13,6 @@ public class MarsCoverageRegistration {
 	@JsonProperty("ingredient")
 	private Object ingredient;
 
-	/*@JsonProperty("marsRequest")
-	private MarsRequest marsRequest;
-
-	@JsonProperty("marsFilePath")
-	private String marsFilePath;*/
-
 	public String getCoverageId() {
 		return coverageId;
 	}
@@ -26,22 +20,6 @@ public class MarsCoverageRegistration {
 	public void setCoverageId(String coverageId) {
 		this.coverageId = coverageId;
 	}
-
-	/*public MarsRequest getMarsRequest() {
-		return marsRequest;
-	}
-
-	public void setMarsRequest(MarsRequest marsRequest) {
-		this.marsRequest = marsRequest;
-	}
-
-	public String getMarsFilePath() {
-		return marsFilePath;
-	}
-
-	public void setMarsFilePath(String marsFilePath) {
-		this.marsFilePath = marsFilePath;
-	}*/
 
 	public Object getIngredient() {
 		return ingredient;

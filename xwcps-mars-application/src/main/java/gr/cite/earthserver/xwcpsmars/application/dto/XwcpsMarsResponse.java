@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(Include.NON_EMPTY)
 public class XwcpsMarsResponse<T> {
 	
-	@JsonProperty
+	@JsonProperty("status")
 	private Integer status;
 	
 	@JsonProperty

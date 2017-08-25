@@ -12,11 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -61,11 +58,26 @@ public class MarsClient implements MarsClientAPI {
 	}
 
 	@Override
+	public void retrieve(String marsTargetFilename, MarsRequest marsRequest, Runnable rasdamanRunnable) throws MarsClientException {
+		retrieve(marsTargetFilename, marsRequest);
+		Thread rasdamanThread = new Thread(rasdamanRunnable);
+		rasdamanThread.start();
+	}
+
+	@Override
 	public String retrieve(String marsTargetFilename, MarsRequest marsRequest) throws MarsClientException {
-		Instant start = Instant.now();
+		String loggingIdMsg = "[" +  marsTargetFilename + "] ";
+
 		Path marsTargetFile = Paths.get(this.targetPath, marsTargetFilename);
 		marsRequest.setTarget(marsTargetFile.toString());
 
+		String marsParameters = serializeMarsRetrievalProcessArguments(marsRequest);
+		executeMarsRetrievalProcess(marsTargetFilename, loggingIdMsg, marsTargetFile, marsParameters);
+
+		return marsTargetFile.toString();
+	}
+
+	private String serializeMarsRetrievalProcessArguments(MarsRequest marsRequest) throws MarsClientException {
 		String marsParametersJson;
 		try {
 			//marsEcmwfDataServerInfoJson = mapper.writeValueAsString(this.marsEcmwfDataServerInfo);
@@ -73,55 +85,54 @@ public class MarsClient implements MarsClientAPI {
 		} catch (JsonProcessingException e) {
 			throw new MarsClientException("MARS retrieval failed", e);
 		}
+		return marsParametersJson;
+	}
 
+	private void executeMarsRetrievalProcess(String marsTargetFilename, String loggingIdMsg, Path marsTargetFile, String marsParametersJson) throws MarsClientException {
 		List<String> proccessArgs = new ArrayList<>(Arrays.asList(this.scriptCommand.split(" ")));
 		proccessArgs.add(marsParametersJson);
 
 		//ProcessBuilder processBuilder = new ProcessBuilder(this.scriptCommand, this.scriptFile, marsEcmwfDataServerInfoJson, marsParametersJson);
 		ProcessBuilder processBuilder = new ProcessBuilder(proccessArgs);
-
 		processBuilder.directory(new File(this.targetPath));
 		processBuilder.redirectErrorStream(true);
 		File log = Paths.get(this.targetPath, marsTargetFilename + ".log").toFile();
 		processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(log));
 
 		try {
+			logger.info(loggingIdMsg + "MARS retrieval [" + proccessArgs.stream().collect(Collectors.joining(" ")) + "]");
+
+			long marsRetrievalStart = System.currentTimeMillis();
 			Process process = processBuilder.start();
-			logger.info("Ready to execute " + proccessArgs.stream().collect(Collectors.joining(" ")));
-
 			int exitValue = process.waitFor();
+			long marsRetrievalEnd = System.currentTimeMillis();
+			logger.info(loggingIdMsg + "MARS retrieval execution time [" + (marsRetrievalEnd - marsRetrievalStart) + " ms]");
+
 			if (exitValue == 0) {
-				logger.info("Execution for target file " + marsTargetFilename + " completed");
-
-				Set<PosixFilePermission> perms = new HashSet<>();
-				//add owners permission
-				perms.add(PosixFilePermission.OWNER_READ);
-				perms.add(PosixFilePermission.OWNER_WRITE);
-				//add group permissions
-				perms.add(PosixFilePermission.GROUP_READ);
-				perms.add(PosixFilePermission.GROUP_WRITE);
-				//add others permissions
-				perms.add(PosixFilePermission.OTHERS_READ);
-
-				Files.setPosixFilePermissions(marsTargetFile, perms);
+				setFilePermissions(marsTargetFile);
 			} else {
-				throw new MarsClientException("MARS retrieval failed. For details see log file " + log.getPath());
+				throw new MarsClientException(loggingIdMsg + "MARS retrieval failed. For details see log file " + log.getPath());
 			}
 		} catch (IOException | InterruptedException e) {
-			throw new MarsClientException("MARS retrieval failed", e);
+			throw new MarsClientException(loggingIdMsg + "MARS retrieval failed", e);
 		}
-
-		logger.debug("MARS retrieval: [" + Duration.between(start, Instant.now()).toMillis() + "ms]");
-		return marsTargetFile.toString();
 	}
 
-	@Override
-	public void retrieve(String marsTargetFilename, MarsRequest marsRequest, Runnable rasdamanRunnable) throws MarsClientException {
-		retrieve(marsTargetFilename, marsRequest);
-		Thread rasdamanThread = new Thread(rasdamanRunnable);
-		rasdamanThread.start();
+	private void setFilePermissions(Path marsTargetFile) throws IOException {
+		Set<PosixFilePermission> perms = new HashSet<>();
+		//add owners permission
+		perms.add(PosixFilePermission.OWNER_READ);
+		perms.add(PosixFilePermission.OWNER_WRITE);
+		//add group permissions
+		perms.add(PosixFilePermission.GROUP_READ);
+		perms.add(PosixFilePermission.GROUP_WRITE);
+		//add others permissions
+		perms.add(PosixFilePermission.OTHERS_READ);
+
+		Files.setPosixFilePermissions(marsTargetFile, perms);
 	}
 
+	@Deprecated
 	@Override
 	public void retrieve(String marsTargetFilename, Map<String, String> marsParameters, Runnable rasdamanRunnable) throws MarsClientException {
 		Path marsTargetFilePath = Paths.get(this.targetPath, marsTargetFilename);
@@ -133,7 +144,7 @@ public class MarsClient implements MarsClientAPI {
 			//marsEcmwfDataServerInfoJson = mapper.writeValueAsString(this.marsEcmwfDataServerInfo);
 			marsParametersJson = mapper.writeValueAsString(marsParameters);
 		} catch (JsonProcessingException e) {
-			throw new MarsClientException("Mars retrieval failed", e);
+			throw new MarsClientException("MARS retrieval failed", e);
 		}
 
 		List<String> proccessArgs = new ArrayList<>(Arrays.asList(this.scriptCommand.split(" ")));
@@ -162,17 +173,7 @@ public class MarsClient implements MarsClientAPI {
 			if (exitValue == 0) {
 				logger.info("Execution for target file " + marsTargetFilename + " completed");
 
-				Set<PosixFilePermission> perms = new HashSet<>();
-				//add owners permission
-				perms.add(PosixFilePermission.OWNER_READ);
-				perms.add(PosixFilePermission.OWNER_WRITE);
-				//add group permissions
-				perms.add(PosixFilePermission.GROUP_READ);
-				perms.add(PosixFilePermission.GROUP_WRITE);
-				//add others permissions
-				perms.add(PosixFilePermission.OTHERS_READ);
-
-				Files.setPosixFilePermissions(marsTargetFilePath, perms);
+				setFilePermissions(marsTargetFilePath);
 
 				Thread rasdamanThread = new Thread(rasdamanRunnable);
 				rasdamanThread.start();

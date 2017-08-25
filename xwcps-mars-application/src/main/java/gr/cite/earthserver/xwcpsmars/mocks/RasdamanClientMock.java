@@ -206,7 +206,7 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 			this.wcsRequestBuilder.deleteCoverage().coverageId(coverageId).build();
 	}
 
-	public void query(String coverageId, String wcpsQuery, String rasdamanResponseFilename) throws RasdamanException {
+	public String query(String wcpsQuery, String rasdamanResponseFilename) throws RasdamanException {
 		logger.info("Querying rasdaman [" + this.rasdamanEndpoint + "?" + wcpsQuery + "]");
 
 		String rasdamanResponse = "WCPS: " + wcpsQuery + ", rasdaman response file: " + rasdamanResponseFilename;
@@ -216,6 +216,7 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		} catch (IOException e) {
 			throw new RasdamanException("Write rasdaman response to " + rasdamanResponseFilename + " failed", e);
 		}
+		return rasdamanResponse;
 	}
 
 	private String getRegistrationMetadata(String rasdamanRegistrationLogFile) throws RasdamanException {

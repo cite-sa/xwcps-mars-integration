@@ -18,7 +18,7 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
 
     private static final String LATITUDE_AXIS = "Lat";
     private static final String LONGITUDE_AXIS = "Long";
-    private static final String DATE_TIME_AXIS = "ansi";
+    private static final String DATE_TIME_AXIS = "reftime";
 
     private CoverageRegistryClient coverageRegistryClient;
 
@@ -71,9 +71,6 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
 
         visitChildren(ctx);
         buildMarsRequest();
-        /*this.marsRequest.setArea(this.coordinatesAggregator.buildMarsArea());
-        this.marsRequest.setDate(this.dateTimeTransformation.buildMarsDate());
-        this.marsRequest.setTime(this.dateTimeTransformation.buildMarsTime());*/
 
         this.coordinatesAggregator = null;
         this.dateTimeTransformation = null;
@@ -102,9 +99,6 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
 
         visitChildren(ctx);
         buildMarsRequest();
-        /*this.marsRequest.setArea(this.coordinatesAggregator.buildMarsArea());
-        this.marsRequest.setDate(this.dateTimeTransformation.buildMarsDate());
-        this.marsRequest.setTime(this.dateTimeTransformation.buildMarsTime());*/
 
         this.coordinatesAggregator = null;
         this.dateTimeTransformation = null;
@@ -139,15 +133,24 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
                 this.axisRangeAggregator = new AxisUtils.AxisRangeAggregator();
                 List<Integer> rangeSteps = null;
                 try {
-                    rangeSteps = this.coverageRegistryClient.retrieveAxisDiscreteValues(this.coverageId, axisName).stream()
-							.map(Integer::parseInt).collect(Collectors.toList());
+                    /*rangeSteps = this.coverageRegistryClient.retrieveAxisDiscreteValues(this.coverageId, axisName).stream()
+							.map(Integer::parseInt).collect(Collectors.toList());*/
+                    rangeSteps = retrieveAxisDiscreteValues(this.coverageId, axisName);
                 } catch (CoverageRegistryException e) {
                     logger.error(e.getMessage(), e);
                 }
                 coverageExpressions.stream().map(Integer::parseInt).forEach(this.axisRangeAggregator::addRangeLimit);
-                this.marsRequestBuilder.mapAxisNameToMarsField(axisName, this.axisRangeAggregator.limitAxisRangeSteps(rangeSteps));
+                this.axisRangeAggregator.limitAxisRangeSteps(rangeSteps);
+                this.marsRequestBuilder.mapAxisNameToMarsField(axisName, this.axisRangeAggregator.stringifyAndGetLimitedRangeSteps());
             }
         }
+    }
+
+    private List<Integer> retrieveAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {
+        Integer origin = Integer.parseInt(this.coverageRegistryClient.retrieveAxisOriginPoint(coverageId, axisName));
+        List<String> coefficients = this.coverageRegistryClient.retrieveAxisCoefficients(coverageId, axisName);
+
+        return coefficients.stream().map(Integer::parseInt).map(coefficient -> origin + coefficient).collect(Collectors.toList());
     }
 
     private void buildMarsRequest() {
@@ -158,7 +161,7 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
             AxisUtils.DateTimeUtil dateTimeUtil = new AxisUtils.DateTimeUtil();
             try {
                 dateTimeUtil.parseMarsDateTimeRange(this.coverageRegistryClient.retrieveAxisOriginPoint(this.coverageId, this.timeAxisName),
-						this.coverageRegistryClient.retrieveAxisCoefficients(this.coverageId, this.timeAxisName));
+                        this.coverageRegistryClient.retrieveAxisCoefficients(this.coverageId, this.timeAxisName));
             } catch (CoverageRegistryException e) {
                 logger.error(e.getMessage(), e);
             }

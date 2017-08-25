@@ -21,7 +21,7 @@ public class CoverageRegistryRasdamanConnector {
 		return marsCollectionId;
 	}
 
-	@Inject
+	//@Inject
 	public CoverageRegistryRasdamanConnector(RasdamanClientAPI rasdamanClient, CoverageRegistryClient coverageRegistryClient) throws FemmeException {
 		this.rasdamanClient = rasdamanClient;
 		this.coverageRegistryClient = coverageRegistryClient;
@@ -38,11 +38,6 @@ public class CoverageRegistryRasdamanConnector {
 	public void registerMarsCollection() throws CoverageRegistryException {
 		this.coverageRegistryClient.registerMarsCollection();
 	}
-
-	/*public void register(String coverageId, String marsTargetFile) throws RasdamanException, CoverageRegistryException {
-		String registrationMetadata = this.rasdamanClient.register(coverageId, marsTargetFile);
-		this.coverageRegistryClient.register(coverageId, registrationMetadata);
-	}*/
 
 	public void register(String coverageId, String ingredientContent) throws RasdamanException, CoverageRegistryException {
 		String registrationMetadata = this.rasdamanClient.register(coverageId, ingredientContent);
@@ -62,8 +57,10 @@ public class CoverageRegistryRasdamanConnector {
 		this.rasdamanClient.ingest(coverageId, marsTargetFile, responseFilename);
 		logger.debug("Rasdaman ingestion: [" + Duration.between(start, Instant.now()).toMillis() + "ms]");
 		start = Instant.now();
-		this.rasdamanClient.query(coverageId, wcpsQuery, responseFilename);
+		this.rasdamanClient.query(wcpsQuery, responseFilename);
 		logger.debug("Rasdaman query: [" + Duration.between(start, Instant.now()).toMillis() + "ms]");
+
+		//this.rasdamanClient.delete(coverageId);
 	}
 
 }

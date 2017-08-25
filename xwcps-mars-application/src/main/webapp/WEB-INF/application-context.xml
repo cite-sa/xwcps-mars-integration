@@ -11,43 +11,37 @@
    
 	<context:property-placeholder location="WEB-INF/xwcps-mars.properties.prod" />
 
-	<!--<bean id="marsClient" class=MarsClient">
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.url}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.key}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.email}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.client.script.command}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.client.script.file}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.target.path}" />
-	</bean>
-
-	<bean id="rasdamanClient" class="gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient">
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.command}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.file}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.name}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.path}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.registration.path}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.response.path}" />
-	</bean>-->
-
 	<bean id="femmeClient" class="gr.cite.femme.client.FemmeClient">
 		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.femme.endpoint}" />
 	</bean>
 
 	<bean id="coverageRegistryClient" class="gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryClient">
 		<constructor-arg ref="femmeClient"/>
-		<!--<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.registry.xpaths.retrieveCoverageMarsMetadataXPath}" />
-		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.registry.xpaths.retrieveCoverageMarsAxisCoefficientsXPath}" />-->
 	</bean>
 
-	<bean id="coverageRegistryRasdamanConnector" class="gr.cite.earthserver.xwcpsmars.rasdaman.CoverageRegistryRasdamanConnector">
+	<!--<bean id="coverageRegistryRasdamanConnector" class="gr.cite.earthserver.xwcpsmars.rasdaman.CoverageRegistryRasdamanConnector">
 		<constructor-arg ref="rasdamanClient"/>
 		<constructor-arg ref="coverageRegistryClient"/>
-	</bean>
+	</bean>-->
 
-	<bean id="xwcpsMarsResource" class="gr.cite.earthserver.xwcpsmars.application.resources.XwcpsMarsResource">
+	<bean id="integrationResource" class="gr.cite.earthserver.xwcpsmars.application.resources.IntegrationResource">
 		<constructor-arg ref="marsClient"/>
-		<constructor-arg ref="coverageRegistryRasdamanConnector"/>
+		<constructor-arg ref="rasdamanClient"/>
+		<constructor-arg ref="coverageRegistryClient"/>
+		<!--<constructor-arg ref="coverageRegistryRasdamanConnector"/>-->
+	</bean>
+	<bean id="parserResource" class="gr.cite.earthserver.xwcpsmars.application.resources.ParserResource">
+		<constructor-arg ref="coverageRegistryClient"/>
+	</bean>
+	<bean id="marsResource" class="gr.cite.earthserver.xwcpsmars.application.resources.MarsResource">
+		<constructor-arg ref="marsClient"/>
+	</bean>
+	<bean id="rasdamanResource" class="gr.cite.earthserver.xwcpsmars.application.resources.RasdamanResource">
+		<constructor-arg ref="rasdamanClient"/>
+	</bean>
+	<bean id="registryResource" class="gr.cite.earthserver.xwcpsmars.application.resources.CoverageRegistryResource">
+		<constructor-arg ref="coverageRegistryClient"/>
+		<constructor-arg ref="rasdamanClient"/>
 	</bean>
 
 	<context:annotation-config/>
@@ -59,7 +53,6 @@
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.key}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.email}" />-->
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.mars.client.script.command}" />
-			<!--<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.mars.client.script.file}" />-->
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.mars.target.path}" />
 			<constructor-arg type="boolean" value="${gr.cite.earthserver.xwcpsmars.debug}" />
 		</bean>
@@ -67,7 +60,6 @@
 		<bean id="rasdamanClient" class="gr.cite.earthserver.xwcpsmars.mocks.RasdamanClientMock">
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.command}" />
-			<!--<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.file}" />-->
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.suffix}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.registration.path}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path}" />
@@ -79,7 +71,6 @@
 	<beans profile="prod">
 		<bean id="marsClient" class="gr.cite.earthserver.xwcpsmars.mars.MarsClient">
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.mars.client.script.command}" />
-			<!--<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.mars.client.script.file}" />-->
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.mars.target.path}" />
 			<constructor-arg type="boolean" value="${gr.cite.earthserver.xwcpsmars.debug}" />
 		</bean>
@@ -87,7 +78,6 @@
 		<bean id="rasdamanClient" class="gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient">
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.command}" />
-			<!--<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.file}" />-->
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.suffix}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.registration.path}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path}" />

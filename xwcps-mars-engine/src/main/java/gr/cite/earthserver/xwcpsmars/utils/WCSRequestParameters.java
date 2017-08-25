@@ -30,7 +30,7 @@ public class WCSRequestParameters {
 
 	private static final String LATITUDE_AXIS = "Lat";
 	private static final String LONGITUDE_AXIS = "Long";
-	private static final String DATE_TIME_AXIS = "ansi";
+	private static final String DATE_TIME_AXIS = "reftime";
 
 	private static final String SERVICE = "service";
 	private static final String VERSION = "version";
@@ -39,15 +39,17 @@ public class WCSRequestParameters {
 	private String service;
 	private String version;
 	private String request;
+	private String coverageId;
+	private GetDescribeCoverage getDescribeCoverageRequest;
 	private GetCoverage getCoverageRequest;
 	private DescribeCoverage describeCoverageRequest;
-	private ProcessCoverage processCoverageRequest;
-
-	private String coverageId;
+	private ProcessCoverages processCoveragesRequest;
 
 	private CoverageRegistryClient coverageRegistryClient;
 
 	public WCSRequestParameters(MultivaluedMap<String, String> requestParameters, CoverageRegistryClient coverageRegistryClient) {
+		this.coverageRegistryClient = coverageRegistryClient;
+
 		requestParameters.forEach((name, value) -> {
 			if (WCSRequestParameters.SERVICE.equals(name)) {
 				this.service = value.get(0);
@@ -55,77 +57,32 @@ public class WCSRequestParameters {
 				this.version = value.get(0);
 			} else if (WCSRequestParameters.REQUEST.equals(name)) {
 				this.request = value.get(0);
-				if (WCSRequestParameters.GET_COVERAGE.equals(this.request)) {
+				/*if (WCSRequestParameters.GET_COVERAGE.equals(this.request)) {
 					this.getCoverageRequest = new GetCoverage();
 					this.getCoverageRequest.setCoverageId(requestParameters.get("coverageId").get(0));
-					this.getCoverageRequest.setSubset(requestParameters.get("subset"));
+					this.getCoverageRequest.setSubsets(requestParameters.get("subsets"));
 				} else if (WCSRequestParameters.DESCRIBE_COVERAGE.equals(this.request)) {
 					this.describeCoverageRequest = new DescribeCoverage();
 					this.describeCoverageRequest.setCoverageId(requestParameters.get("coverageId").get(0));
-					this.describeCoverageRequest.setSubset(requestParameters.get("subset"));
+					this.describeCoverageRequest.setSubsets(requestParameters.get("subsets"));*/
+				if (WCSRequestParameters.GET_COVERAGE.equals(this.request) || WCSRequestParameters.DESCRIBE_COVERAGE.equals(this.request)) {
+					this.getDescribeCoverageRequest = new GetDescribeCoverage();
+					this.getDescribeCoverageRequest.setCoverageId(requestParameters.get("coverageId").get(0));
+					this.getDescribeCoverageRequest.setSubsets(requestParameters.get("subset"));
 				} else if (WCSRequestParameters.PROCESS_COVERAGES.equals(this.request)) {
-					this.processCoverageRequest = new ProcessCoverage();
+					this.processCoveragesRequest = new ProcessCoverages();
 					if (requestParameters.get("query") == null) {
-						throw new IllegalArgumentException("No query parameter specified in ProcessCoverage request");
+						throw new IllegalArgumentException("No query parameter specified in ProcessCoverages request");
 					}
-					this.processCoverageRequest.setQuery(requestParameters.get("query").get(0));
+					this.processCoveragesRequest.setQuery(requestParameters.get("query").get(0));
 				}
 			}
 		});
-		this.coverageRegistryClient = coverageRegistryClient;
 	}
 
-	public String getService() {
-		return service;
-	}
-
-	public void setService(String service) {
-		this.service = service;
-	}
-
-	public String getVersion() {
-		return version;
-	}
-
-	public void setVersion(String version) {
-		this.version = version;
-	}
-
-	public String getRequest() {
-		return request;
-	}
-
-	public void setRequest(String request) {
-		this.request = request;
-	}
-
-	public GetCoverage getGetCoverageRequest() {
-		return getCoverageRequest;
-	}
-
-	public void setGetCoverageRequest(GetCoverage getCoverageRequest) {
-		this.getCoverageRequest = getCoverageRequest;
-	}
-
-	public DescribeCoverage getDescribeCoverageRequest() {
-		return describeCoverageRequest;
-	}
-
-	public void setDescribeCoverageRequest(DescribeCoverage describeCoverageRequest) {
-		this.describeCoverageRequest = describeCoverageRequest;
-	}
-
-	public ProcessCoverage getProcessCoverageRequest() {
-		return processCoverageRequest;
-	}
-
-	public void setProcessCoverageRequest(ProcessCoverage processCoverageRequest) {
-		this.processCoverageRequest = processCoverageRequest;
-	}
-
-	private class GetCoverage {
+	private class GetDescribeCoverage {
 		private String coverageId;
-		private List<String> subset;
+		private List<String> subsets;
 
 		public String getCoverageId() {
 			return coverageId;
@@ -135,37 +92,20 @@ public class WCSRequestParameters {
 			this.coverageId = coverageId;
 		}
 
-		public List<String> getSubset() {
-			return subset;
+		public List<String> getSubsets() {
+			return subsets;
 		}
 
-		public void setSubset(List<String> subset) {
-			this.subset = subset;
-		}
-	}
-
-	private class DescribeCoverage{
-		private String coverageId;
-		private List<String> subset;
-
-		public String getCoverageId() {
-			return coverageId;
-		}
-
-		public void setCoverageId(String coverageId) {
-			this.coverageId = coverageId;
-		}
-
-		public List<String> getSubset() {
-			return subset;
-		}
-
-		public void setSubset(List<String> subset) {
-			this.subset = subset;
+		public void setSubsets(List<String> subsets) {
+			this.subsets = subsets;
 		}
 	}
 
-	private class ProcessCoverage {
+	private class GetCoverage extends GetDescribeCoverage { }
+
+	private class DescribeCoverage extends GetDescribeCoverage { }
+
+	private class ProcessCoverages {
 		private String query;
 
 		public String getQuery() {
@@ -185,27 +125,20 @@ public class WCSRequestParameters {
 		MarsRequestBuilder marsRequestBuilder;
 
 		if (WCSRequestParameters.PROCESS_COVERAGES.equals(this.request)) {
-			// TODO parse WCPS query
-			CharStream stream = CharStreams.fromString(this.processCoverageRequest.getQuery());
-			XWCPSLexer lexer = new XWCPSLexer(stream);
-			XWCPSParser parser = new XWCPSParser(new CommonTokenStream(lexer));
-			ParseTree tree = parser.xwcps();
-
-			XWCPSEvalVisitor visitor = new XWCPSEvalVisitor(this.coverageRegistryClient);
-			marsRequestBuilder = visitor.visit(tree);
-			this.coverageId = visitor.getCoverageId();
+			marsRequestBuilder = parseProcessCoverageRequest();
 		} else {
-			List<String> subsets = new ArrayList<>();
-
+			/*List<String> subsets = new ArrayList<>();
 			if (WCSRequestParameters.GET_COVERAGE.equals(this.request)) {
 				this.coverageId = this.getCoverageRequest.getCoverageId();
-				subsets = this.getCoverageRequest.getSubset() != null ? this.getCoverageRequest.getSubset() : new ArrayList<>();
+				subsets = this.getCoverageRequest.getSubsets() != null ? this.getCoverageRequest.getSubsets() : new ArrayList<>();
 			} else if (WCSRequestParameters.DESCRIBE_COVERAGE.equals(this.request)) {
 				this.coverageId = this.describeCoverageRequest.getCoverageId();
-				subsets = this.describeCoverageRequest.getSubset() != null ? this.getCoverageRequest.getSubset() : new ArrayList<>();
-			}
+				subsets = this.describeCoverageRequest.getSubsets() != null ? this.describeCoverageRequest.getSubsets() : new ArrayList<>();
+			}*/
+			this.coverageId = this.getDescribeCoverageRequest.getCoverageId();
 			marsRequestBuilder = MarsRequest.builder(this.coverageId);
 
+			List<String> subsets = this.getDescribeCoverageRequest.getSubsets() != null ? this.getDescribeCoverageRequest.getSubsets() : new ArrayList<>();
 			transformWcsToMarsParameters(subsets, marsRequestBuilder);
 		}
 
@@ -213,6 +146,19 @@ public class WCSRequestParameters {
 
 		return marsRequestBuilder.build();
 	}
+
+	private MarsRequestBuilder parseProcessCoverageRequest() {
+		MarsRequestBuilder marsRequestBuilder;CharStream stream = CharStreams.fromString(this.processCoveragesRequest.getQuery());
+		XWCPSLexer lexer = new XWCPSLexer(stream);
+		XWCPSParser parser = new XWCPSParser(new CommonTokenStream(lexer));
+		ParseTree tree = parser.xwcps();
+
+		XWCPSEvalVisitor visitor = new XWCPSEvalVisitor(this.coverageRegistryClient);
+		marsRequestBuilder = visitor.visit(tree);
+		this.coverageId = visitor.getCoverageId();
+		return marsRequestBuilder;
+	}
+
 
 	private void transformWcsToMarsParameters(List<String> subsets, MarsRequestBuilder marsRequestBuilder) throws CoverageRegistryException {
 		AxisUtils.CoordinatesAggregator coordinatesAggregator = new AxisUtils.CoordinatesAggregator();
@@ -238,9 +184,11 @@ public class WCSRequestParameters {
 					subsetRange.forEach(dateTimeTransformation::parseDateTime);
 
 					marsRequestBuilder.date(dateTimeTransformation.buildMarsDate());
+
 					if (dateTimeTransformation.isDateRange()) {
 						AxisUtils.DateTimeUtil dateTimeUtil = new AxisUtils.DateTimeUtil();
-						dateTimeUtil.parseMarsDateTimeRange(this.coverageRegistryClient.retrieveAxisOriginPoint(this.coverageId, axisName),
+						dateTimeUtil.parseMarsDateTimeRange(
+								this.coverageRegistryClient.retrieveAxisOriginPoint(this.coverageId, axisName),
 								this.coverageRegistryClient.retrieveAxisCoefficients(this.coverageId, axisName));
 						marsRequestBuilder.time(dateTimeUtil.buildMarsRequestTimeSteps());
 
@@ -248,17 +196,15 @@ public class WCSRequestParameters {
 						marsRequestBuilder.time(dateTimeTransformation.buildMarsTime());
 					}
 				} else {
-					// TODO retrieve discrete steps from coverage registration metadata
-					AxisUtils.AxisRangeAggregator rangeLimits = new AxisUtils.AxisRangeAggregator();
-
-					/*List<Integer> rangeSteps = this.coverageRegistryClient.retrieveAxisDiscreteValues(this.coverageId, axisName).stream()
-							.map(Integer::parseInt).collect(Collectors.toList());*/
 					List<Integer> rangeSteps = retrieveAxisDiscreteValues(this.coverageId, axisName);
 
 					logger.debug("Initial range [" + rangeSteps.stream().map(Object::toString).collect(Collectors.joining(",")) + "]");
 
-					rangeLimits.setRangeLimits(subsetRange.stream().map(Integer::parseInt).collect(Collectors.toList()));
-					marsRequestBuilder.mapAxisNameToMarsField(axisName, rangeLimits.limitAxisRangeSteps(rangeSteps));
+					AxisUtils.AxisRangeAggregator rangeAggregator = new AxisUtils.AxisRangeAggregator();
+					rangeAggregator.setRangeLimits(subsetRange.stream().map(Integer::parseInt).collect(Collectors.toList()));
+					rangeAggregator.limitAxisRangeSteps(rangeSteps);
+
+					marsRequestBuilder.mapAxisNameToMarsField(axisName, rangeAggregator.stringifyAndGetLimitedRangeSteps());
 				}
 			}
 		}
@@ -284,20 +230,22 @@ public class WCSRequestParameters {
 		retrieveAndSetMarsParametersFromRegistry(coverageId, marsRequestBuilder);
 
 		MarsRequest marsRequest = marsRequestBuilder.build();
-		if (marsRequest.getDate() == null) {
-			AxisUtils.DateTimeUtil dateTimeUtil = new AxisUtils.DateTimeUtil();
+		if (marsRequest.getDate() == null || marsRequest.getDate().trim().isEmpty()) {
+			logger.debug("MARS request date is empty");
 
-			String origin = this.coverageRegistryClient.retrieveAxisOriginPoint(this.coverageId, "reftime");
+			String origin = this.coverageRegistryClient.retrieveAxisOriginPoint(this.coverageId, WCSRequestParameters.DATE_TIME_AXIS);
 			logger.debug("Origin [" + origin + "]");
-			List<String> coefficients = this.coverageRegistryClient.retrieveAxisCoefficients(this.coverageId, "reftime");
-			logger.debug("Coefficients [" + coefficients + "]");
-			dateTimeUtil.parseMarsDateTimeRange(origin, coefficients);
 
+			List<String> coefficients = this.coverageRegistryClient.retrieveAxisCoefficients(this.coverageId, WCSRequestParameters.DATE_TIME_AXIS);
+			//logger.debug("Coefficients [" + coefficients + "]");
+
+			AxisUtils.DateTimeUtil dateTimeUtil = new AxisUtils.DateTimeUtil();
+			dateTimeUtil.parseMarsDateTimeRange(origin, coefficients);
 			marsRequestBuilder.date(dateTimeUtil.buildMarsRequestDateRange());
 			marsRequestBuilder.time(dateTimeUtil.buildMarsRequestTimeSteps());
 		}
 
-		if (marsRequest.getArea() == null || marsRequest.getArea().isEmpty()) {
+		if (marsRequest.getArea() == null || marsRequest.getArea().trim().isEmpty()) {
 			CoordinatesEnvelope envelope = this.coverageRegistryClient.retrieveCoordinatesEnvelope(this.coverageId);
 			marsRequest.setArea(envelope.getMaxLat() + "/" + envelope.getMinLong() + "/" + envelope.getMinLat() + "/" + envelope.getMaxLong());
 		}

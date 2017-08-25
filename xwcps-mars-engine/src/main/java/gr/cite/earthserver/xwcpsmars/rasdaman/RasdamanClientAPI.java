@@ -10,5 +10,5 @@ public interface RasdamanClientAPI {
 
 	public void delete(String coverageId) throws RasdamanException;
 
-	public void query(String coverageId, String wcpsQuery, String responseFilename) throws RasdamanException;
+	public String query(String wcpsQuery, String responseFilename) throws RasdamanException;
 }
