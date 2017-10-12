@@ -10,5 +10,4 @@ gr.cite.earthserver.xwcpsmars.rasdaman.registration.path=/home/deploy/data/xwcps
 gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path=/home/deploy/data/xwcps-mars/rasdaman/ingestion
 gr.cite.earthserver.xwcpsmars.rasdaman.response.path=/home/deploy/data/xwcps-mars/rasdaman/responses
 
-
 gr.cite.earthserver.xwcpsmars.femme.endpoint=http\://localhost:8081/femme

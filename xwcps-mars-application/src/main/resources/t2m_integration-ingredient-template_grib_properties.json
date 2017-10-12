@@ -37,7 +37,6 @@
         },
         "slicer": {
           "type": "grib",
-          "optimise": "true",
           "pixelIsPoint": true,
           "bands": [
             {
@@ -50,24 +49,23 @@
           ],
           "axes": {
             "reftime": {
-              "min": "$reftime_AXIS_MIN_BOUND$",
-              "max": "$reftime_AXIS_MAX_BOUND$",
+              "min": "grib_datetime(${grib:dataDate}, ${grib:dataTime})",
               "gridOrder": 0,
               "type": "ansidate",
               "irregular": true,
-              "directPositions": "$reftime_AXIS_DIRECT_POSITIONS$",
+              "directPositions": "${grib:axis:reftime}",
               "dataBound" : true
             },
             "Long": {
-              "min": "$Long_AXIS_MIN_BOUND$",
-              "max": "$Long_AXIS_MAX_BOUND$",
+              "min": "${grib:longitudeOfFirstGridPointInDegrees}",
+              "max": "${grib:longitudeOfLastGridPointInDegrees}",
               "gridOrder": 1,
               "dataBound" : true,
               "resolution": "-${grib:iDirectionIncrementInDegrees} if bool(${grib:iScansNegatively}) else ${grib:iDirectionIncrementInDegrees}"
             },
             "Lat": {
-              "min": "$Lat_AXIS_MIN_BOUND$",
-              "max": "$Lat_AXIS_MAX_BOUND$",
+              "min": "${grib:latitudeOfLastGridPointInDegrees}",
+              "max": "${grib:latitudeOfFirstGridPointInDegrees}",
               "gridOrder": 2,
               "dataBound" : true,
               "resolution": "${grib:jDirectionIncrementInDegrees} if bool(${grib:jScansPositively}) else -${grib:jDirectionIncrementInDegrees}"

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
-import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryClient;
+import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
 import gr.cite.earthserver.xwcpsmars.utils.MarsCoverageRegistration;
 import org.slf4j.Logger;
@@ -24,11 +24,11 @@ public class CoverageRegistryResource {
 	private static final Logger logger = LoggerFactory.getLogger(CoverageRegistryResource.class);
 	private static final ObjectMapper mapper = new ObjectMapper();
 
-	private CoverageRegistryClient registryClient;
+	private CoverageRegistry registryClient;
 	private RasdamanClientAPI rasdamanClient;
 
 	@Inject
-	public CoverageRegistryResource(CoverageRegistryClient registryClient, RasdamanClientAPI rasdamanClient) {
+	public CoverageRegistryResource(CoverageRegistry registryClient, RasdamanClientAPI rasdamanClient) {
 		this.registryClient = registryClient;
 		this.rasdamanClient = rasdamanClient;
 	}

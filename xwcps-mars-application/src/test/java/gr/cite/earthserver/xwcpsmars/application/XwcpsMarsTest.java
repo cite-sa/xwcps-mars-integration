@@ -4,7 +4,7 @@ import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.rasdaman.CoverageRegistryRasdamanConnector;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
-import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryClient;
+import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
 import gr.cite.earthserver.xwcpsmars.utils.WCSRequestParameters;
 import gr.cite.femme.client.FemmeClient;
@@ -12,8 +12,6 @@ import gr.cite.femme.client.FemmeException;
 import gr.cite.femme.client.api.FemmeClientAPI;
 import gr.cite.femme.core.model.DataElement;
 import gr.cite.femme.core.model.Metadatum;
-import org.junit.Before;
-import org.junit.Test;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -26,10 +24,10 @@ public class XwcpsMarsTest {
 	private CoverageRegistryRasdamanConnector coverageRegistryRasdamanConnector;
 	private RasdamanClient rasdamanClient;
 	private FemmeClientAPI femmeClient;
-	private CoverageRegistryClient coverageRegistryClient;
+	private CoverageRegistry coverageRegistry;
 
 //	@Before
-	public void init() throws FemmeException, CoverageRegistryException, RasdamanException {
+	public void init() throws FemmeException, CoverageRegistryException, RasdamanException, IOException {
 		this.rasdamanClient = new RasdamanClient(
 				"http://earthserver.ecmwf.int/rasdaman/ows",
 				"python /home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/wcst_import.py",
@@ -40,9 +38,9 @@ public class XwcpsMarsTest {
 				true
 				);
 		this.femmeClient = new FemmeClient("http://localhost:8090/femme-application-devel");
-		this.coverageRegistryClient = new CoverageRegistryClient(this.femmeClient);
+		this.coverageRegistry = new CoverageRegistry(this.femmeClient);
 
-		this.coverageRegistryRasdamanConnector = new CoverageRegistryRasdamanConnector(this.rasdamanClient, this.coverageRegistryClient);
+		this.coverageRegistryRasdamanConnector = new CoverageRegistryRasdamanConnector(this.rasdamanClient, this.coverageRegistry);
 		System.out.println("MARS collection id: " + this.coverageRegistryRasdamanConnector.getMarsCollectionId());
 	}
 
@@ -213,7 +211,7 @@ public class XwcpsMarsTest {
 		map.add("subset", "Long(-10,10)");
 		map.add("subset", "ansi(\"2003-04-12T18:00\")");
 
-		WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(map, this.coverageRegistryRasdamanConnector.getCoverageRegistryClient());
+		WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(map, this.coverageRegistryRasdamanConnector.getCoverageRegistry());
 		MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
 		System.out.println(marsRequest);
 	}

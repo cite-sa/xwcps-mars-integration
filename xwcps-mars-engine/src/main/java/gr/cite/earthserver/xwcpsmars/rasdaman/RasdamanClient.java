@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -285,38 +286,37 @@ public class RasdamanClient implements RasdamanClientAPI {
 	@Override
 	public String query(String wcsRequest, String rasdamanResponseFilename) throws RasdamanException {
 		String loggingIdMsg = "[" + rasdamanResponseFilename + "] ";
-		WebTarget rasdamanWebTarget = this.webTarget;
 
-		rasdamanWebTarget = buildRasdamanRequest(wcsRequest, rasdamanWebTarget);
-		logger.info(loggingIdMsg + "WCS request [" + rasdamanWebTarget.getUri().toString() + "]");
+		Invocation rasdamanWcsRequest = buildWcsRequest(wcsRequest, this.webTarget);
+		logger.info(loggingIdMsg + "WCS request [" + rasdamanWcsRequest.toString() + "]");
 
 		long queryStart = System.currentTimeMillis();
-		Response rasdamanResponse = rasdamanWebTarget.request(MediaType.APPLICATION_XML).get();
+		Response rasdamanResponse = rasdamanWcsRequest.invoke();
 		long queryEnd = System.currentTimeMillis();
 		logger.info(loggingIdMsg + "WCS request execution time [" + (queryEnd - queryStart) + " ms]");
 
-		String response = readAndStoreRasdamanResponse(rasdamanResponseFilename, loggingIdMsg, rasdamanResponse);
+		String response = readAndStoreRasdamanResponse(rasdamanResponse, rasdamanResponseFilename);
 		if (rasdamanResponse.getStatus() != 200) {
 			throw new RasdamanException(loggingIdMsg + "Rasdaman request " + wcsRequest + " failed. " + rasdamanResponse.getStatusInfo().getReasonPhrase());
 		}
 		return response;
 	}
 
-	private WebTarget buildRasdamanRequest(String wcsRequest, WebTarget rasdamanWebTarget) {
+	private Invocation buildWcsRequest(String wcsRequest, WebTarget rasdamanWebTarget) {
+		WebTarget tempRasdamanWebTarget = rasdamanWebTarget;
 		for (String queryParam : wcsRequest.split("&")) {
 			String[] param = queryParam.split("=");
-			rasdamanWebTarget = rasdamanWebTarget.queryParam(param[0], UriComponent.encode(param[1], UriComponent.Type.QUERY_PARAM_SPACE_ENCODED));
+			tempRasdamanWebTarget = tempRasdamanWebTarget.queryParam(param[0], UriComponent.encode(param[1], UriComponent.Type.QUERY_PARAM_SPACE_ENCODED));
 		}
-
-		return rasdamanWebTarget;
+		return tempRasdamanWebTarget.request(MediaType.APPLICATION_XML).buildGet();
 	}
 
-	private String readAndStoreRasdamanResponse(String rasdamanResponseFilename, String loggingIdMsg, Response rasdamanResponse) throws RasdamanException {
+	private String readAndStoreRasdamanResponse(Response rasdamanResponse, String rasdamanResponseFilename) throws RasdamanException {
 		String response = rasdamanResponse.readEntity(String.class);
 		try {
 			Files.write(Paths.get(this.responsePath, rasdamanResponseFilename), Collections.singletonList(response));
 		} catch (IOException e) {
-			throw new RasdamanException(loggingIdMsg + "WCS request response storing in " + rasdamanResponseFilename + " failed", e);
+			throw new RasdamanException("[" + rasdamanResponseFilename + "] WCS request response storing in " + rasdamanResponseFilename + " failed", e);
 		}
 		return response;
 	}

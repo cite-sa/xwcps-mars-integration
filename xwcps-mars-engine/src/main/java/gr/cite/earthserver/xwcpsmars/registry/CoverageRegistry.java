@@ -15,6 +15,7 @@ import gr.cite.femme.core.model.Metadatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.cache.annotation.CacheResult;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
@@ -25,11 +26,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
-public class CoverageRegistryClient {
-	private static final Logger logger = LoggerFactory.getLogger(CoverageRegistryClient.class);
+public class CoverageRegistry {
+	private static final Logger logger = LoggerFactory.getLogger(CoverageRegistry.class);
 	private static final ObjectMapper mapper = new ObjectMapper();
 
 	private static final String COVERAGE_ID_PLACEHOLDER$ = "$$COVERAGE_ID_PLACEHOLDER$$";
@@ -57,7 +57,7 @@ public class CoverageRegistryClient {
 	private String marsCollectionId;
 
 	@Inject
-	public CoverageRegistryClient(FemmeClientAPI femmeClient) throws CoverageRegistryException {
+	public CoverageRegistry(FemmeClientAPI femmeClient) throws CoverageRegistryException {
 		this.femmeClient = femmeClient;
 		/*this.retrieveMarsCoverageMetadataXPath = retrieveMarsCoverageMetadataXPath;
 		this.retrieveMarsCoverageAxisCoefficientsXPath = retrieveMarsCoverageAxisCoefficientsXPath;*/
@@ -68,8 +68,8 @@ public class CoverageRegistryClient {
 	public void registerMarsCollection() throws CoverageRegistryException {
 		if (this.marsCollectionId == null) {
 			Collection marsCollection = new Collection();
-			marsCollection.setName(CoverageRegistryClient.MARS_COLLECTION_NAME);
-			marsCollection.setEndpoint(CoverageRegistryClient.MARS_COLLECTION_ENDPOINT);
+			marsCollection.setName(CoverageRegistry.MARS_COLLECTION_NAME);
+			marsCollection.setEndpoint(CoverageRegistry.MARS_COLLECTION_ENDPOINT);
 			try {
 				this.marsCollectionId = this.femmeClient.insert(marsCollection);
 				logger.info("Registered MARS collection [" + this.marsCollectionId + "]");
@@ -82,11 +82,11 @@ public class CoverageRegistryClient {
 	public void register(String coverageId, String coverageMetadata) throws CoverageRegistryException {
 		registerMarsCollection();
 		try {
-			//this.marsCollectionId = this.femmeClient.getCollectionByName(CoverageRegistryClient.MARS_COLLECTION_NAME).getId();
+			//this.marsCollectionId = this.femmeClient.getCollectionByName(CoverageRegistry.MARS_COLLECTION_NAME).getId();
 
 			DataElement coverage = new DataElement();
 			coverage.setName(coverageId);
-			coverage.setEndpoint(CoverageRegistryClient.MARS_COVERAGE_ENDPOINT);
+			coverage.setEndpoint(CoverageRegistry.MARS_COVERAGE_ENDPOINT);
 
 			Metadatum coverageMetadatum = new Metadatum();
 			coverageMetadatum.setValue(coverageMetadata);
@@ -124,16 +124,9 @@ public class CoverageRegistryClient {
 		}
 	}
 
-	private String queryCoverageRegistryByXPath(String xPath) throws FemmeClientException, FemmeException, CoverageRegistryException {
-		logger.debug("XPath [" + xPath + "]");
-		return this.femmeClient.getDataElementsInMemoryXPath(null, null, xPath)
-				.stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No coverage satisfying XPath [" + xPath + "]"))
-				.getMetadata().stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No metadata satisfying XPath [" + xPath + "]")).getValue();
-	}
-
 	public MarsCoverageRegistrationMetadata retrieveMarsCoverageMetadata(String coverageId) throws CoverageRegistryException {
 		try {
-			String xPath = CoverageRegistryClient.COVERAGE_METADATA_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String xPath = CoverageRegistry.COVERAGE_METADATA_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
 			String metadata = queryCoverageRegistryByXPath(xPath);
 			return mapper.readValue(metadata, MarsCoverageRegistrationMetadata.class);
 		} catch (FemmeException | FemmeClientException | IOException e) {
@@ -143,9 +136,9 @@ public class CoverageRegistryClient {
 
 	public AxisEnvelope retrieveAxisEnvelope(String coverageId, String axisName) throws CoverageRegistryException {
 		try {
-			String axisLabelsXPath = CoverageRegistryClient.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
-			String upperCornerXPath = CoverageRegistryClient.ENVELOPE_UPPER_CORNER_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
-			String lowerCornerXPath = CoverageRegistryClient.ENVELOPE_LOWER_CORNER_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String axisLabelsXPath = CoverageRegistry.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String upperCornerXPath = CoverageRegistry.ENVELOPE_UPPER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String lowerCornerXPath = CoverageRegistry.ENVELOPE_LOWER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
 
 			String[] axisLabels = queryCoverageRegistryByXPath(axisLabelsXPath).split(" ");
 			String[] upperCorner = queryCoverageRegistryByXPath(upperCornerXPath).split(" ");
@@ -175,9 +168,9 @@ public class CoverageRegistryClient {
 
 	public CoordinatesEnvelope retrieveCoordinatesEnvelope(String coverageId) throws CoverageRegistryException {
 		try {
-			String axisLabelsXPath = CoverageRegistryClient.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
-			String upperCornerXPath = CoverageRegistryClient.ENVELOPE_UPPER_CORNER_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
-			String lowerCornerXPath = CoverageRegistryClient.ENVELOPE_LOWER_CORNER_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String axisLabelsXPath = CoverageRegistry.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String upperCornerXPath = CoverageRegistry.ENVELOPE_UPPER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String lowerCornerXPath = CoverageRegistry.ENVELOPE_LOWER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
 
 			String[] axisLabels = queryCoverageRegistryByXPath(axisLabelsXPath).split(" ");
 			String[] upperCorner = queryCoverageRegistryByXPath(upperCornerXPath).split(" ");
@@ -211,7 +204,7 @@ public class CoverageRegistryClient {
 
 	public List<String> retrieveAxisCoefficients(String coverageId, String axisName) throws CoverageRegistryException {
 		try {
-			String xPath = CoverageRegistryClient.AXIS_COEFFICIENTS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId).replace(CoverageRegistryClient.AXIS_NAME_PLACEHOLDER, axisName);
+			String xPath = CoverageRegistry.AXIS_COEFFICIENTS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId).replace(CoverageRegistry.AXIS_NAME_PLACEHOLDER, axisName);
 			return Arrays.asList(queryCoverageRegistryByXPath(xPath).split(" "));
 		} catch (FemmeException | FemmeClientException e) {
 			throw new CoverageRegistryException(e);
@@ -220,10 +213,10 @@ public class CoverageRegistryClient {
 
 	public String retrieveAxisOriginPoint(String coverageId, String axisName) throws CoverageRegistryException {
 		try {
-			String originPointXPath = CoverageRegistryClient.ORIGIN_POINT_POS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String originPointXPath = CoverageRegistry.ORIGIN_POINT_POS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
 			String originPoint = queryCoverageRegistryByXPath(originPointXPath);
 
-			String originPointAxisLabelsXPath = CoverageRegistryClient.ORIGIN_POINT_AXIS_LABELS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String originPointAxisLabelsXPath = CoverageRegistry.ORIGIN_POINT_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
 			String originPointAxisLabels = queryCoverageRegistryByXPath(originPointAxisLabelsXPath);
 
 			int axisIndex = -1;
@@ -249,11 +242,20 @@ public class CoverageRegistryClient {
 		}
 	}
 
+	@CacheResult(cacheName = "xpath")
+	private String queryCoverageRegistryByXPath(String xPath) throws FemmeClientException, FemmeException, CoverageRegistryException {
+		logger.debug("XPath [" + xPath + "]");
+		return xPath;
+		//return this.femmeClient.getDataElementsInMemoryXPath(null, null, xPath)
+		//		.stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No coverage satisfying XPath [" + xPath + "]"))
+		//		.getMetadata().stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No metadata satisfying XPath [" + xPath + "]")).getValue();
+	}
+
 	@Deprecated
 	public List<String> retrieveAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {
 		String range;
 		try {
-			String xPath = CoverageRegistryClient.RANGE_PARAMETERS_XPATH.replace(CoverageRegistryClient.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String xPath = CoverageRegistry.RANGE_PARAMETERS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
 			range = queryCoverageRegistryByXPath(xPath);
 		} catch (FemmeException | FemmeClientException e) {
 			throw new CoverageRegistryException(e);
@@ -293,7 +295,7 @@ public class CoverageRegistryClient {
 	}
 
 	public static void main(String[] args) throws CoverageRegistryException, FemmeException, FemmeClientException {
-		CoverageRegistryClient client = new CoverageRegistryClient(new FemmeClient("http://localhost:8080/femme-application-devel"));
+		CoverageRegistry client = new CoverageRegistry(new FemmeClient("http://localhost:8080/femme-application-devel"));
 		String response = client.queryCoverageRegistryByXPath("//wcs:CoverageDescription[@gml:id='ECMWF_SST_4326_05']");
 		System.out.println(response);
 	}

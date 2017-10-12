@@ -29,7 +29,7 @@ public class MarsClientMock implements MarsClientAPI {
 	private String targetPath;
 
 	@Inject
-	public MarsClientMock(String scriptCommand, String scriptFile, String targetPath, boolean debug) {
+	public MarsClientMock(String scriptCommand, String targetPath, boolean debug) {
 		/*this.marsEcmwfDataServerInfo = new HashMap<>();
 		this.marsEcmwfDataServerInfo.put("url", marsEcmwfDataServerUrl);
 		this.marsEcmwfDataServerInfo.put("key", marsEcmwfDataServerKey);

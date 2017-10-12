@@ -54,37 +54,32 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 	private static final String GMLCOV_METADATA_OPENING_TAG = "<gmlcov:metadata>";
 	private static final String GMLCOV_METADATA_CLOSING_TAG = "</gmlcov:metadata>";
 
-	private String rasdamanEndpoint;
-	private String rasdamanScriptCommand;
-	private String rasdamanScriptFile;
-	private String ingredientTemplateFileName;
-	private String rasdamanIngredientsPath;
-	private String rasdamanRegistrationPath;
-	private String rasdamanResponsePath;
+	private String endpoint;
+	private String scriptCommand;
+	private String ingredientTemplateFileNameSuffix;
+	private String registrationPath;
+	private String ingestionPath;
+	private String responsePath;
 
+	private boolean debug;
 	private Client rasdamanClient;
 	private WCSRequestBuilder wcsRequestBuilder;
 
-	public RasdamanClientMock() {
-
-	}
-
 	@Inject
-	public RasdamanClientMock(String rasdamanEndpoint, String rasdamanScriptCommand, String rasdamanScriptFile, String ingredientTemplateFileName, String rasdamanIngredientsPath, String rasdamanRegistrationPath, String rasdamanResponsePath, boolean debug) {
-		this.rasdamanEndpoint = rasdamanEndpoint;
-		this.rasdamanScriptCommand = rasdamanScriptCommand;
-		this.rasdamanScriptFile = rasdamanScriptFile;
-		this.ingredientTemplateFileName = ingredientTemplateFileName;
-		this.rasdamanIngredientsPath = rasdamanIngredientsPath;
-		this.rasdamanRegistrationPath = rasdamanRegistrationPath;
-		this.rasdamanResponsePath = rasdamanResponsePath;
+	public RasdamanClientMock(String endpoint, String scriptCommand, String ingredientTemplateFileNameSuffix, String registrationPath, String ingestionPath, String responsePath, boolean debug) throws IOException {
+		this.endpoint = endpoint;
+		this.scriptCommand = scriptCommand;
+		this.ingredientTemplateFileNameSuffix = ingredientTemplateFileNameSuffix;
+		this.registrationPath = registrationPath;
+		this.ingestionPath = ingestionPath;
+		this.responsePath = responsePath;
 
-		this.wcsRequestBuilder = WCSRequest.newBuilder().endpoint(this.rasdamanEndpoint);
+		this.wcsRequestBuilder = WCSRequest.newBuilder().endpoint(this.endpoint);
 		this.rasdamanClient = ClientBuilder.newClient();
 	}
 
 	public String getResponsePath() {
-		return rasdamanResponsePath;
+		return this.responsePath;
 	}
 
 	public String register(String marsTargetFile, String coverageId) throws RasdamanException {
@@ -101,9 +96,9 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 
 		// Ingredient file
 		String rasdamanRegistrationFilename = UUID.randomUUID().toString();
-		Path registrationIngredientFile = Paths.get(this.rasdamanRegistrationPath, rasdamanRegistrationFilename + "_ingredient.json");
+		Path registrationIngredientFile = Paths.get(this.registrationPath, rasdamanRegistrationFilename + "_ingredient.json");
 		try {
-			String registrationIngredientTemplate = Resources.toString(Resources.getResource(this.ingredientTemplateFileName), Charsets.UTF_8);
+			String registrationIngredientTemplate = Resources.toString(Resources.getResource(this.ingredientTemplateFileNameSuffix), Charsets.UTF_8);
 
 			registrationIngredientTemplate = registrationIngredientTemplate.replace(RasdamanClientMock.MOCK_PLACEHOLDER, "true")
 					.replace(RasdamanClientMock.COVERAGE_ID_PLACEHOLDER, coverageId)
@@ -129,11 +124,11 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		}
 
 		// Register in Rasdaman
-		File registrationLogFile = new File(Paths.get(this.rasdamanRegistrationPath, rasdamanRegistrationFilename + ".log").toString());
+		File registrationLogFile = new File(Paths.get(this.registrationPath, rasdamanRegistrationFilename + ".log").toString());
 
 		try {
-			logger.info("Ready to execute " + this.rasdamanScriptCommand + " " + this.rasdamanScriptFile + " " + registrationIngredientFile.toString());
-			byte[] registrationLogResult = Files.readAllBytes(Paths.get(this.rasdamanRegistrationPath, "mocked.log"));
+			logger.info("Ready to execute " + this.scriptCommand + " " + registrationIngredientFile.toString());
+			byte[] registrationLogResult = Files.readAllBytes(Paths.get(this.registrationPath, "mocked.log"));
 			Files.write(registrationLogFile.toPath(), registrationLogResult);
 			logger.info("Registration for ingredient " + registrationIngredientFile + " completed");
 		} catch (IOException e) {
@@ -162,9 +157,9 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		}
 
 		// Ingredient file
-		String ingredientFile = this.rasdamanIngredientsPath + "/" + rasdamanIngestionFilename + "_ingredient.json";
+		String ingredientFile = this.ingestionPath + "/" + rasdamanIngestionFilename + "_ingredient.json";
 		try {
-			String ingredientsTemplate = Resources.toString(Resources.getResource(this.ingredientTemplateFileName), Charsets.UTF_8);
+			String ingredientsTemplate = Resources.toString(Resources.getResource(this.ingredientTemplateFileNameSuffix), Charsets.UTF_8);
 
 			ingredientsTemplate = ingredientsTemplate.replace(RasdamanClientMock.MOCK_PLACEHOLDER, "false")
 					.replace(RasdamanClientMock.COVERAGE_ID_PLACEHOLDER, coverageId)
@@ -190,10 +185,10 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		}
 
 		// Ingest in Rasdaman
-		File log = new File(this.rasdamanResponsePath + "/" + rasdamanIngestionFilename + ".log");
+		File log = new File(this.registrationPath + "/" + rasdamanIngestionFilename + ".log");
 		try {
 			Files.write(log.toPath(), ("Ingesting MARS file " + marsTargetFile).getBytes());
-			logger.info("Ready to execute " + this.rasdamanScriptCommand + " " + this.rasdamanScriptFile + " " + ingredientFile);
+			logger.info("Ready to execute " + this.scriptCommand + " " + ingredientFile);
 			logger.info("Ingestion for ingredient " + ingredientFile + " completed");
 		} catch (IOException e) {
 			throw new RasdamanException("Rasdaman ingestion failed", e);
@@ -207,12 +202,12 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 	}
 
 	public String query(String wcpsQuery, String rasdamanResponseFilename) throws RasdamanException {
-		logger.info("Querying rasdaman [" + this.rasdamanEndpoint + "?" + wcpsQuery + "]");
+		logger.info("Querying rasdaman [" + this.endpoint + "?" + wcpsQuery + "]");
 
 		String rasdamanResponse = "WCPS: " + wcpsQuery + ", rasdaman response file: " + rasdamanResponseFilename;
 		logger.info("Writing response to " + rasdamanResponseFilename);
 		try {
-			Files.write(Paths.get(this.rasdamanResponsePath + "/" + rasdamanResponseFilename), rasdamanResponse.getBytes());
+			Files.write(Paths.get(this.responsePath + "/" + rasdamanResponseFilename), rasdamanResponse.getBytes());
 		} catch (IOException e) {
 			throw new RasdamanException("Write rasdaman response to " + rasdamanResponseFilename + " failed", e);
 		}

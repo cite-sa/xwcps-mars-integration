@@ -12,8 +12,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.nio.file.Paths;
-import java.util.UUID;
 
 @Path("rasdaman")
 public class RasdamanResource {
@@ -62,7 +60,7 @@ public class RasdamanResource {
 			throw new WebApplicationException(e.getMessage(), e);
 		}
 
-		return Response.ok().build();
+		return Response.noContent().build();
 	}
 
 }

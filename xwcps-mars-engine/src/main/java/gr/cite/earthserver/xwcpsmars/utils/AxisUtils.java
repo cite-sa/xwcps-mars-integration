@@ -1,6 +1,5 @@
 package gr.cite.earthserver.xwcpsmars.utils;
 
-import gr.cite.earthserver.xwcpsmars.mars.MarsRequest.MarsRequestBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -173,7 +172,7 @@ public class AxisUtils {
 
 		public void limitAxisRangeSteps(List<Integer> rangeSteps) {
 			this.rangeLimits.sort(Comparator.naturalOrder());
-			this.limitedRangeSteps = rangeSteps.stream().sorted(Comparator.naturalOrder())
+			this.limitedRangeSteps = rangeSteps.stream()/*.sorted(Comparator.naturalOrder())*/
 					.filter(rangeStep -> {
 						if (this.rangeLimits.size() == 1) {
 							return rangeStep == this.rangeLimits.get(0);
@@ -208,6 +207,17 @@ public class AxisUtils {
 
 			this.dates.addAll(uniqueDates);
 			this.times.addAll(uniqueTimes);
+		}
+
+		public List<LocalDateTime> generateDateTimeDirectPositions(String minBound, String maxBound, String originPoint, List<String> coefficients) {
+			LocalDateTime minBoundDateTime = parseDateTime(minBound);
+			LocalDateTime maxBoundDateTime = parseDateTime(maxBound);
+			LocalDateTime originDateTime = parseDateTime(originPoint);
+
+			return coefficients.stream().map(Double::parseDouble)
+					.map(coefficient -> DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient))
+					.filter(dateTime -> dateTime.isAfter(minBoundDateTime) && dateTime.isBefore(maxBoundDateTime) || dateTime.isEqual(minBoundDateTime) || dateTime.isEqual(maxBoundDateTime))
+					.collect(Collectors.toList());
 		}
 
 		public String buildMarsRequestDateRange() {

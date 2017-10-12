@@ -2,7 +2,7 @@ package gr.cite.earthserver.xwcpsmars.application.resources;
 
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
-import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryClient;
+import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
 import gr.cite.earthserver.xwcpsmars.utils.WCSRequestParameters;
 import org.slf4j.Logger;
@@ -23,12 +23,12 @@ import java.util.UUID;
 public class ParserResource {
 	private static final Logger logger = LoggerFactory.getLogger(ParserResource.class);
 
-	private CoverageRegistryClient coverageRegistryClient;
+	private CoverageRegistry coverageRegistry;
 	private MarsClientAPI marsClient;
 
 	@Inject
-	public ParserResource(CoverageRegistryClient coverageRegistryClient, MarsClientAPI marsClient) {
-		this.coverageRegistryClient = coverageRegistryClient;
+	public ParserResource(CoverageRegistry coverageRegistry, MarsClientAPI marsClient) {
+		this.coverageRegistry = coverageRegistry;
 		this.marsClient = marsClient;
 	}
 
@@ -39,7 +39,7 @@ public class ParserResource {
 		try {
 			long startTime = System.currentTimeMillis();
 
-			WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(requestUriInfo.getQueryParameters(), this.coverageRegistryClient);
+			WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(requestUriInfo.getQueryParameters(), this.coverageRegistry);
 			MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
 
 			long endTime = System.currentTimeMillis();
