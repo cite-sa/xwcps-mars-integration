@@ -269,8 +269,8 @@ public class AxisUtils {
 				LocalDateTime originDateTime = DateTimeUtil.parseDateTimeAsLocal(originPoint);
 
 				return coefficients.stream().map(Double::parseDouble)
-						.map(coefficient -> ZonedDateTime.from(DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient)))
-						.map(zonedDateTime -> "\\\"" + zonedDateTime.toString() + "\\\"")
+						.map(coefficient -> LocalDateTime.from(DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient)))
+						.map(localDateTime -> "\\\"" + localDateTime.toString() + "\\\"")
 						.collect(Collectors.toList());
 			} else if (AxisDirectPositions.isNumber(originPoint)) {
 				Number originValue = AxisDirectPositions.parseNumber(originPoint);
@@ -293,7 +293,7 @@ public class AxisUtils {
 				return coefficients.stream().map(Double::parseDouble)
 						.map(coefficient -> LocalDateTime.from(DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient)))
 						.filter(dateTime -> dateTime.isAfter(minBoundDateTime) && dateTime.isBefore(maxBoundDateTime) || dateTime.isEqual(minBoundDateTime) || dateTime.isEqual(maxBoundDateTime))
-						.map(localDateTime -> "\\\"" + ZonedDateTime.from(localDateTime).toString() + "\\\"")
+						.map(localDateTime -> "\\\"" + localDateTime.toString() + "\\\"")
 						.collect(Collectors.toList());
 			} else if (AxisDirectPositions.isNumber(originPoint)) {
 				Number originValue = AxisDirectPositions.parseNumber(originPoint);
@@ -362,6 +362,8 @@ public class AxisUtils {
 		list.add("\\\"2\\\"");
 		list.add("\\\"3\\\"");
 		System.out.println(list);
+
+		String dateTime = "2014-01-01T00:00";
 	}
 
 }

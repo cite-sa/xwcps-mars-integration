@@ -435,10 +435,6 @@ public class CoverageRegistry {
 		//String response = client.queryCoverageRegistryByXPath("//wcs:CoverageDescription[@gml:id='ECMWF_SST_4326_05']");
 		//System.out.println(response);
 
-		String string1 = "1";
-		String string2 = null;
-		Map<String, String> map = new HashMap<>();
-		map.put(string1, string2);
 	}
 
 }
