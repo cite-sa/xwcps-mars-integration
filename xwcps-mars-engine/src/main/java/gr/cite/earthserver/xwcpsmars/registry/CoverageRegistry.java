@@ -2,6 +2,10 @@ package gr.cite.earthserver.xwcpsmars.registry;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.cite.commons.utils.xml.XMLConverter;
+import gr.cite.commons.utils.xml.XPathEvaluator;
+import gr.cite.commons.utils.xml.exceptions.XMLConversionException;
+import gr.cite.commons.utils.xml.exceptions.XPathEvaluationException;
 import gr.cite.earthserver.xwcpsmars.mars.MarsCoverageRegistrationMetadata;
 import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 import gr.cite.earthserver.xwcpsmars.utils.CoordinatesEnvelope;
@@ -14,18 +18,15 @@ import gr.cite.femme.core.model.DataElement;
 import gr.cite.femme.core.model.Metadatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
 
 import javax.cache.annotation.CacheResult;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
+import javax.xml.xpath.XPathFactoryConfigurationException;
 import java.io.IOException;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CoverageRegistry {
@@ -45,6 +46,9 @@ public class CoverageRegistry {
 	private static final String ORIGIN_POINT_AXIS_LABELS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gml:origin/*[local-name()='Point']/@axisLabels";
 	private static final String ORIGIN_POINT_POS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gml:origin/*[local-name()='Point']/*[local-name()='pos']/text()";
 	private static final String AXIS_COEFFICIENTS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis[gmlrgrid:gridAxesSpanned='$$AXIS_NAME_PLACEHOLDER$$']/gmlrgrid:coefficients/text()";
+
+	private static final String GENERAL_GRID_AXIS_LABEL_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis/gmlrgrid:gridAxesSpanned/text()";
+	private static final String GENERAL_GRID_AXIS_COEFFICIENTS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis[gmlrgrid:gridAxesSpanned='$$AXIS_NAME_PLACEHOLDER$$']/gmlrgrid:coefficients/text()";
 
 
 	private static final String MARS_COLLECTION_NAME = "MARS";
@@ -134,6 +138,15 @@ public class CoverageRegistry {
 		}
 	}
 
+	public List<String> retrieveAllAxesLabels(String coverageId) throws CoverageRegistryException {
+		try {
+			String xPath = CoverageRegistry.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			return Arrays.asList(queryCoverageRegistryByXPath(xPath).split(" "));
+		} catch (FemmeException | FemmeClientException e) {
+			throw new CoverageRegistryException(e);
+		}
+	}
+
 	public AxisEnvelope retrieveAxisEnvelope(String coverageId, String axisName) throws CoverageRegistryException {
 		try {
 			String axisLabelsXPath = CoverageRegistry.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
@@ -202,6 +215,24 @@ public class CoverageRegistry {
 		}
 	}
 
+	public Map<String, List<String>> retrieveAllAxesCoefficients(String coverageId) throws CoverageRegistryException {
+		return retrieveAllAxesLabels(coverageId).stream().collect(Collectors.toMap(
+				axisLabel -> axisLabel,
+				axisLabel -> {
+					List<String> coefficients = new ArrayList<>();
+					try {
+						coefficients = retrieveAxisCoefficients(coverageId, axisLabel);
+					} catch (CoverageRegistryException e) {
+						logger.warn(e.getMessage(), e);
+					}
+					return coefficients;
+				}
+		)).entrySet().stream()
+				.filter((axisAndCoefficients) -> (axisAndCoefficients.getValue() != null && axisAndCoefficients.getValue().size() > 0))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+	}
+
 	public List<String> retrieveAxisCoefficients(String coverageId, String axisName) throws CoverageRegistryException {
 		try {
 			String xPath = CoverageRegistry.AXIS_COEFFICIENTS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId).replace(CoverageRegistry.AXIS_NAME_PLACEHOLDER, axisName);
@@ -242,13 +273,13 @@ public class CoverageRegistry {
 		}
 	}
 
-	@CacheResult(cacheName = "xpath")
+	//@CacheResult(cacheName = "xpath")
 	private String queryCoverageRegistryByXPath(String xPath) throws FemmeClientException, FemmeException, CoverageRegistryException {
-		logger.debug("XPath [" + xPath + "]");
-		return xPath;
-		//return this.femmeClient.getDataElementsInMemoryXPath(null, null, xPath)
-		//		.stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No coverage satisfying XPath [" + xPath + "]"))
-		//		.getMetadata().stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No metadata satisfying XPath [" + xPath + "]")).getValue();
+		//logger.debug("XPath [" + xPath + "]");
+		//return xPath;
+		return this.femmeClient.getDataElementsInMemoryXPath(null, null, xPath)
+				.stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No coverage satisfying XPath [" + xPath + "]"))
+				.getMetadata().stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No metadata satisfying XPath [" + xPath + "]")).getValue();
 	}
 
 	@Deprecated
@@ -294,10 +325,120 @@ public class CoverageRegistry {
 		return steps;
 	}
 
-	public static void main(String[] args) throws CoverageRegistryException, FemmeException, FemmeClientException {
-		CoverageRegistry client = new CoverageRegistry(new FemmeClient("http://localhost:8080/femme-application-devel"));
-		String response = client.queryCoverageRegistryByXPath("//wcs:CoverageDescription[@gml:id='ECMWF_SST_4326_05']");
-		System.out.println(response);
+	public static void main(String[] args) throws CoverageRegistryException, FemmeException, FemmeClientException, XMLConversionException, XPathEvaluationException, XPathFactoryConfigurationException {
+		String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+				"<gmlcov:ReferenceableGridCoverage xmlns='http://www.opengis.net/gml/3.2' xmlns:gml='http://www" +
+				".opengis.net/gml/3.2' xmlns:gmlcov='http://www.opengis.net/gmlcov/1.0' xmlns:swe='http://www.opengis" +
+				".net/swe/2.0' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:gmlrgrid='http://www" +
+				".opengis.net/gml/3.3/rgrid' gml:id=\"t2m_integration\">" +
+				"<gmlcov:metadata>{  \"Type_of_level\": \"surface\",   \"Grib1_Parameter_id\": \"167\",   " +
+				"\"Originating_or_generating_Center\": \"European Centre for Medium-Range Weather Forecasts\",   " +
+				"\"MARS_stream\": \"oper\",   \"slices\": [],   \"GRIB_table_version\": \"167.128\",   " +
+				"\"Grib1_Parameter_name\": \"2 metre temperature\",   \"MARS_type\": \"an\"}</gmlcov:metadata>" +
+				"<boundedBy>" +
+				"<Envelope srsName=\"http://earthserver2d.ecmwf.int:8080/def/crs-compound?1=http://earthserver2d.ecmwf" +
+				".int:8080/def/crs/EPSG/0/4326&amp;2=http://earthserver2d.ecmwf" +
+				".int:8080/def/crs/OGC/0/AnsiDate?axis-label=&quot;reftime&quot;\" axisLabels=\"Lat Long reftime\" " +
+				"uomLabels=\"  http://www.opengis.net/def/uom/UCUM/0/d\" srsDimension=\"3\">" +
+				"<lowerCorner>-90.25 -180.25 \"1979-01-01T00:00:00+00:00\"</lowerCorner>" +
+				"<upperCorner>90.25 179.75 \"2016-12-31T18:00:00+00:00\"</upperCorner>" +
+				"</Envelope>" +
+				"</boundedBy>" +
+				"<domainSet>" +
+				"<gml:ReferenceableGridByVectors dimension=\"3\" gml:id=\"grid\">" +
+				"<limits>" +
+				"<GridEnvelope>" +
+				"<low>0 0 0</low>" +
+				"<high>55519 719 360</high>" +
+				"</GridEnvelope>" +
+				"</limits>" +
+				"<axisLabels>reftime Long Lat</axisLabels>" +
+				"<gml:origin>" +
+				"<Point gml:id=\"origin\" srsName=\"http://earthserver2d.ecmwf" +
+				".int:8080/def/crs-compound?1=http://earthserver2d.ecmwf.int:8080/def/crs/EPSG/0/4326&amp;" +
+				"2=http://earthserver2d.ecmwf.int:8080/def/crs/OGC/0/AnsiDate?axis-label=&quot;reftime&quot;\" " +
+				"axisLabels=\"Lat Long reftime\" uomLabels=\"  http://www.opengis.net/def/uom/UCUM/0/d\" " +
+				"srsDimension=\"3\">" +
+				"<pos>90.00 -180.00 \"1979-01-01T00:00:00+00:00\"</pos>" +
+				"</Point>" +
+				"</gml:origin>" +
+				"<gmlrgrid:generalGridAxis>" +
+				"<gmlrgrid:GeneralGridAxis>" +
+				"<gmlrgrid:offsetVector srsName=\"http://earthserver2d.ecmwf" +
+				".int:8080/def/crs-compound?1=http://earthserver2d.ecmwf.int:8080/def/crs/EPSG/0/4326&amp;" +
+				"2=http://earthserver2d.ecmwf.int:8080/def/crs/OGC/0/AnsiDate?axis-label=&quot;reftime&quot;\" " +
+				"axisLabels=\"Lat Long reftime\" uomLabels=\"  http://www.opengis.net/def/uom/UCUM/0/d\" " +
+				"srsDimension=\"3\">                    0 0 1                </gmlrgrid:offsetVector>" +
+				"<gmlrgrid:coefficients>0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75</gmlrgrid:coefficients>" +
+				"<gmlrgrid:gridAxesSpanned>reftime</gmlrgrid:gridAxesSpanned>" +
+				"<gmlrgrid:sequenceRule axisOrder=\"+1\">None</gmlrgrid:sequenceRule>" +
+				"</gmlrgrid:GeneralGridAxis>" +
+				"</gmlrgrid:generalGridAxis>" +
+				"<gmlrgrid:generalGridAxis>" +
+				"<gmlrgrid:GeneralGridAxis>" +
+				"<gmlrgrid:offsetVector srsName=\"http://earthserver2d.ecmwf" +
+				".int:8080/def/crs-compound?1=http://earthserver2d.ecmwf.int:8080/def/crs/EPSG/0/4326&amp;" +
+				"2=http://earthserver2d.ecmwf.int:8080/def/crs/OGC/0/AnsiDate?axis-label=&quot;reftime&quot;\" " +
+				"axisLabels=\"Lat Long reftime\" uomLabels=\"  http://www.opengis.net/def/uom/UCUM/0/d\" " +
+				"srsDimension=\"3\">                    0 0.5 0                </gmlrgrid:offsetVector>" +
+				"<gmlrgrid:coefficients></gmlrgrid:coefficients>" +
+				"<gmlrgrid:gridAxesSpanned>Long</gmlrgrid:gridAxesSpanned>" +
+				"<gmlrgrid:sequenceRule axisOrder=\"+1\">None</gmlrgrid:sequenceRule>" +
+				"</gmlrgrid:GeneralGridAxis>" +
+				"</gmlrgrid:generalGridAxis>" +
+				"<gmlrgrid:generalGridAxis>" +
+				"<gmlrgrid:GeneralGridAxis>" +
+				"<gmlrgrid:offsetVector srsName=\"http://earthserver2d.ecmwf" +
+				".int:8080/def/crs-compound?1=http://earthserver2d.ecmwf.int:8080/def/crs/EPSG/0/4326&amp;" +
+				"2=http://earthserver2d.ecmwf.int:8080/def/crs/OGC/0/AnsiDate?axis-label=&quot;reftime&quot;\" " +
+				"axisLabels=\"Lat Long reftime\" uomLabels=\"  http://www.opengis.net/def/uom/UCUM/0/d\" " +
+				"srsDimension=\"3\">                    -0.5 0 0                </gmlrgrid:offsetVector>" +
+				"<gmlrgrid:coefficients></gmlrgrid:coefficients>" +
+				"<gmlrgrid:gridAxesSpanned>Lat</gmlrgrid:gridAxesSpanned>" +
+				"<gmlrgrid:sequenceRule axisOrder=\"+1\">None</gmlrgrid:sequenceRule>" +
+				"</gmlrgrid:GeneralGridAxis>" +
+				"</gmlrgrid:generalGridAxis>" +
+				"</gml:ReferenceableGridByVectors>" +
+				"</domainSet>" +
+				"<gml:rangeSet>" +
+				"<gml:rangeParameters></gml:rangeParameters>" +
+				"<gml:File>" +
+				"<gml:fileReference><![CDATA[                file:///home/deploy/data/rasdaman-mars/stream_oper/t2m" +
+				".grib            ]]></gml:fileReference>" +
+				"<gml:fileStructure>application/grib</gml:fileStructure>" +
+				"</gml:File>" +
+				"</gml:rangeSet>" +
+				"<gmlcov:rangeType>" +
+				"<swe:DataRecord>" +
+				"<swe:field name=\"ERA-interim Temperature@Surface\">" +
+				"<swe:Quantity definition=\"\">" +
+				"<swe:description>ei</swe:description>" +
+				"<swe:nilValues>" +
+				"<swe:NilValues>" +
+				"<swe:nilValue reason=\"Nil value represents missing values.\">                        9999           " +
+				"         </swe:nilValue>" +
+				"</swe:NilValues>" +
+				"</swe:nilValues>" +
+				"<swe:uom code=\"\"/>" +
+				"</swe:Quantity>" +
+				"</swe:field>" +
+				"</swe:DataRecord>" +
+				"</gmlcov:rangeType>" +
+				"</gmlcov:ReferenceableGridCoverage>";
+
+		//Node xmlNode = XMLConverter.stringToNode(xml);
+		//XPathEvaluator evaluator = new XPathEvaluator(xmlNode);
+		//List<String> result = evaluator.evaluate("/gmlcov:ReferenceableGridCoverage[@gml:id='t2m_integration']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis/gmlrgrid:gridAxesSpanned/text()");
+		//System.out.println(result);
+
+		//CoverageRegistry client = new CoverageRegistry(new FemmeClient("http://localhost:8080/femme-application-devel"));
+		//String response = client.queryCoverageRegistryByXPath("//wcs:CoverageDescription[@gml:id='ECMWF_SST_4326_05']");
+		//System.out.println(response);
+
+		String string1 = "1";
+		String string2 = null;
+		Map<String, String> map = new HashMap<>();
+		map.put(string1, string2);
 	}
 
 }

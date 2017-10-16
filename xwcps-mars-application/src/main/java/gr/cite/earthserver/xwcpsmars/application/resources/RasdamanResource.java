@@ -3,6 +3,7 @@ package gr.cite.earthserver.xwcpsmars.application.resources;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Path("rasdaman")
 public class RasdamanResource {
@@ -30,8 +34,10 @@ public class RasdamanResource {
 	@Path("coverages")
 	@Produces(MediaType.TEXT_PLAIN)
 	public Response ingest(@QueryParam("coverageId") String coverageId, @QueryParam("marsTargetFile") String marsTargetFile) {
+		Map<String, AxisEnvelope> axesBounds = new HashMap<>();
+		Map<String, List<String>> axesDirectPositions = new HashMap<>();
 		try {
-			this.rasdamanClient.ingest(coverageId, this.marsClient.getTargetPath() + "/" + marsTargetFile, marsTargetFile);
+			this.rasdamanClient.ingest(coverageId, this.marsClient.getTargetPath() + "/" + marsTargetFile, marsTargetFile, axesBounds, axesDirectPositions);
 		} catch (RasdamanException e) {
 			throw new WebApplicationException(e.getMessage(), e);
 		}

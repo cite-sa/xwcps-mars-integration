@@ -3,13 +3,17 @@ package gr.cite.earthserver.xwcpsmars.rasdaman;
 import gr.cite.earthserver.xwcpsmars.mars.MarsCoverageRegistrationMetadata;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
+import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 import gr.cite.femme.client.FemmeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
+@Deprecated
 public class CoverageRegistryRasdamanConnector {
 	private static final Logger logger = LoggerFactory.getLogger(CoverageRegistry.class);
 	private RasdamanClientAPI rasdamanClient;
@@ -51,9 +55,9 @@ public class CoverageRegistryRasdamanConnector {
 		return this.coverageRegistry.retrieveMarsCoverageMetadata(coverageId);
 	}
 
-	public void ingestAndQuery(String coverageId, String wcpsQuery, String marsTargetFile, String responseFilename) throws RasdamanException {
+	public void ingestAndQuery(String coverageId, String wcpsQuery, String marsTargetFile, String responseFilename, Map<String, AxisEnvelope> axesBounds, Map<String, List<String>> axesDirectPositions) throws RasdamanException {
 		Instant start = Instant.now();
-		this.rasdamanClient.ingest(coverageId, marsTargetFile, responseFilename);
+		this.rasdamanClient.ingest(coverageId, marsTargetFile, responseFilename, axesBounds, axesDirectPositions);
 		logger.debug("Rasdaman ingestion: [" + Duration.between(start, Instant.now()).toMillis() + "ms]");
 		start = Instant.now();
 		this.rasdamanClient.query(wcpsQuery, responseFilename);

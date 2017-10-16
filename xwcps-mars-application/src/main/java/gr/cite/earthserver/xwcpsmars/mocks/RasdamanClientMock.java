@@ -13,6 +13,7 @@ import gr.cite.earthserver.wcs.core.WCSResponse;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 import org.glassfish.jersey.uri.UriComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -144,7 +139,7 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 	}
 
 	@Override
-	public void ingest(String coverageId, String marsTargetFile, String rasdamanIngestionFilename) throws RasdamanException {
+	public void ingest(String coverageId, String marsTargetFile, String ingestionFilename, Map<String, AxisEnvelope> axesBounds, Map<String, List<String>> axesDirectPositions) throws RasdamanException {
 		// Mars target file content
 		ByteArrayOutputStream marsOutput;
 		try {
@@ -157,7 +152,7 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		}
 
 		// Ingredient file
-		String ingredientFile = this.ingestionPath + "/" + rasdamanIngestionFilename + "_ingredient.json";
+		String ingredientFile = this.ingestionPath + "/" + ingestionFilename + "_ingredient.json";
 		try {
 			String ingredientsTemplate = Resources.toString(Resources.getResource(this.ingredientTemplateFileNameSuffix), Charsets.UTF_8);
 
@@ -185,7 +180,7 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		}
 
 		// Ingest in Rasdaman
-		File log = new File(this.registrationPath + "/" + rasdamanIngestionFilename + ".log");
+		File log = new File(this.registrationPath + "/" + ingestionFilename + ".log");
 		try {
 			Files.write(log.toPath(), ("Ingesting MARS file " + marsTargetFile).getBytes());
 			logger.info("Ready to execute " + this.scriptCommand + " " + ingredientFile);
@@ -193,7 +188,7 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		} catch (IOException e) {
 			throw new RasdamanException("Rasdaman ingestion failed", e);
 		}
-		logger.info("Ingestion " + rasdamanIngestionFilename + " completed successfully");
+		logger.info("Ingestion " + ingestionFilename + " completed successfully");
 
 	}
 

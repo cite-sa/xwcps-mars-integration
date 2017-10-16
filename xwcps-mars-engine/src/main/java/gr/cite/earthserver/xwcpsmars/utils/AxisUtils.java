@@ -3,17 +3,17 @@ package gr.cite.earthserver.xwcpsmars.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalUnit;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class AxisUtils {
@@ -196,28 +196,38 @@ public class AxisUtils {
 		public void parseMarsDateTimeRange(String dateTimeOriginPoint, List<String> dateTimeCoefficients) {
 			Set<LocalDate> uniqueDates = new HashSet<>();
 			Set<LocalTime> uniqueTimes = new HashSet<>();
-			LocalDateTime originDateTime = parseDateTime(dateTimeOriginPoint);
+			ZonedDateTime originDateTime = parseDateTimeAsZoned(dateTimeOriginPoint);
 
 			dateTimeCoefficients.stream().map(Double::parseDouble)
 					.map(coefficient -> DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient))
 					.forEachOrdered(dateTime -> {
-						uniqueDates.add(dateTime.toLocalDate());
-						uniqueTimes.add(dateTime.toLocalTime());
+						uniqueDates.add(LocalDateTime.from(dateTime).toLocalDate());
+						uniqueTimes.add(LocalDateTime.from(dateTime).toLocalTime());
 					});
 
 			this.dates.addAll(uniqueDates);
 			this.times.addAll(uniqueTimes);
 		}
 
-		public List<LocalDateTime> generateDateTimeDirectPositions(String minBound, String maxBound, String originPoint, List<String> coefficients) {
-			LocalDateTime minBoundDateTime = parseDateTime(minBound);
-			LocalDateTime maxBoundDateTime = parseDateTime(maxBound);
-			LocalDateTime originDateTime = parseDateTime(originPoint);
+		public List<ZonedDateTime> generateDateTimeDirectPositions(String originPoint, List<String> coefficients) {
+			ZonedDateTime originDateTime = parseDateTimeAsZoned(originPoint);
 
 			return coefficients.stream().map(Double::parseDouble)
-					.map(coefficient -> DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient))
+					.map(coefficient -> ZonedDateTime.from(DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient)))
+					.collect(Collectors.toList());
+		}
+
+		public List<ZonedDateTime> generateDateTimeDirectPositions(String minBound, String maxBound, String originPoint, List<String> coefficients) {
+			ZonedDateTime minBoundDateTime = parseDateTimeAsZoned(minBound);
+			ZonedDateTime maxBoundDateTime = parseDateTimeAsZoned(maxBound);
+			ZonedDateTime originDateTime = parseDateTimeAsZoned(originPoint);
+
+			List<ZonedDateTime> directPosition = coefficients.stream().map(Double::parseDouble)
+					.map(coefficient -> ZonedDateTime.from(DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient)))
 					.filter(dateTime -> dateTime.isAfter(minBoundDateTime) && dateTime.isBefore(maxBoundDateTime) || dateTime.isEqual(minBoundDateTime) || dateTime.isEqual(maxBoundDateTime))
 					.collect(Collectors.toList());
+
+			return directPosition.size() > 1 ? directPosition : Collections.EMPTY_LIST;
 		}
 
 		public String buildMarsRequestDateRange() {
@@ -234,12 +244,15 @@ public class AxisUtils {
 
 		}
 
-		private static LocalDateTime increaseDateTimeByCoefficientOfDay(LocalDateTime dateTime, Double coefficient) {
-			return dateTime.plusHours(new Double(coefficient * DateTimeUtil.HOURS_OF_DAY).longValue());
+		private static Temporal increaseDateTimeByCoefficientOfDay(Temporal dateTime, Double coefficient) {
+			return dateTime.plus(new Double(coefficient * DateTimeUtil.HOURS_OF_DAY).longValue(), ChronoUnit.HOURS);
 		}
 
+		private static ZonedDateTime parseDateTimeAsZoned(String dateTime) {
+			return ZonedDateTime.parse(dateTime.replaceFirst("^\"", "").replaceFirst("\"$", ""));
+		}
 
-		private static LocalDateTime parseDateTime(String dateTime) {
+		private static LocalDateTime parseDateTimeAsLocal(String dateTime) {
 			dateTime = dateTime.replaceFirst("^\"", "").replaceFirst("\"$", "");
 			try {
 				return ZonedDateTime.parse(dateTime).toLocalDateTime();
@@ -247,6 +260,108 @@ public class AxisUtils {
 				return LocalDateTime.parse(dateTime);
 			}
 		}
+	}
+
+	public static final class AxisDirectPositions {
+
+		public static List<String> generateAxisDirectPositions(String originPoint, List<String> coefficients) {
+			if (DateTimeTransformation.isValidDateTime(originPoint)) {
+				LocalDateTime originDateTime = DateTimeUtil.parseDateTimeAsLocal(originPoint);
+
+				return coefficients.stream().map(Double::parseDouble)
+						.map(coefficient -> ZonedDateTime.from(DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient)))
+						.map(zonedDateTime -> "\\\"" + zonedDateTime.toString() + "\\\"")
+						.collect(Collectors.toList());
+			} else if (AxisDirectPositions.isNumber(originPoint)) {
+				Number originValue = AxisDirectPositions.parseNumber(originPoint);
+				return coefficients.stream().map(Double::parseDouble)
+						.map(coefficient -> originValue.doubleValue() + coefficient)
+						.map(directPosition -> AxisDirectPositions.parseNumber(directPosition.toString()))
+						.map(Object::toString)
+						.collect(Collectors.toList());
+			} else {
+				return Collections.emptyList();
+			}
+		}
+
+		public static List<String> generateAxisDirectPositions(String minBound, String maxBound, String originPoint, List<String> coefficients) {
+			if (DateTimeTransformation.isValidDateTime(originPoint)) {
+				LocalDateTime minBoundDateTime = DateTimeUtil.parseDateTimeAsLocal(minBound);
+				LocalDateTime maxBoundDateTime = DateTimeUtil.parseDateTimeAsLocal(maxBound);
+				LocalDateTime originDateTime = DateTimeUtil.parseDateTimeAsLocal(originPoint);
+
+				return coefficients.stream().map(Double::parseDouble)
+						.map(coefficient -> LocalDateTime.from(DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient)))
+						.filter(dateTime -> dateTime.isAfter(minBoundDateTime) && dateTime.isBefore(maxBoundDateTime) || dateTime.isEqual(minBoundDateTime) || dateTime.isEqual(maxBoundDateTime))
+						.map(localDateTime -> "\\\"" + ZonedDateTime.from(localDateTime).toString() + "\\\"")
+						.collect(Collectors.toList());
+			} else if (AxisDirectPositions.isNumber(originPoint)) {
+				Number originValue = AxisDirectPositions.parseNumber(originPoint);
+				Double minBoundValue = Double.parseDouble(minBound);
+				Double maxBoundValue = Double.parseDouble(maxBound);
+
+				return coefficients.stream().map(Double::parseDouble)
+						.map(coefficient -> originValue.doubleValue() + coefficient)
+						.filter(directPosition -> directPosition >= minBoundValue && directPosition <= maxBoundValue)
+						.map(directPosition -> AxisDirectPositions.parseNumber(directPosition.toString()))
+						.map(Object::toString)
+						.collect(Collectors.toList());
+			} else {
+				return Collections.emptyList();
+			}
+		}
+
+		private static boolean isNumber(String value) {
+			try {
+				NumberFormat.getInstance().parse(value);
+			} catch (ParseException e) {
+				return false;
+			}
+			return true;
+		}
+
+		private static Number parseNumber(String value) {
+			Number number = null;
+			try {
+				number = NumberFormat.getInstance().parse(value);
+			} catch (ParseException e) {
+				logger.error(e.getMessage(), e);
+			}
+			return number;
+		}
+	}
+
+	public static void main(String[] args) throws ParseException {
+		String num1 = "5.0";
+		String num2 = "5.0";
+		//int i = Integer.parseInt(num);
+		//double d = Double.parseDouble(num);
+		//Long l = Long.parseLong(num);
+		Number number1 = NumberFormat.getInstance().parse(num1);
+		Number number2 = NumberFormat.getInstance().parse(num2);
+
+		//System.out.println(i);
+		//System.out.println(d);
+		//System.out.println(l);
+		Double d = number1.doubleValue() + number2.doubleValue();
+		Number str = NumberFormat.getInstance().parse(d.toString());
+		System.out.println(str);
+
+		//List<Number> numbers = Arrays.stream(new String[]{"5.0", "6.5", "7.0"}).map(AxisDirectPositions::parseNumber).collect(Collectors.toList());
+		//List<Long> longs = numbers.stream().map(number -> {
+		//	try {
+		//		return Long.parseLong(number.toString());
+		//	} catch (NumberFormatException e) {
+		//		return null;
+		//	}
+		//}).filter(Objects::nonNull).collect(Collectors.toList());
+		//System.out.println(longs.size());
+
+		List<String> list = new ArrayList<>();
+		list.add("\\\"1\\\"");
+		list.add("\\\"2\\\"");
+		list.add("\\\"3\\\"");
+		System.out.println(list);
 	}
 
 }

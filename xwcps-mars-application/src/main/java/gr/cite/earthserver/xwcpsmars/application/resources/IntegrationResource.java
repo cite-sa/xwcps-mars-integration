@@ -3,6 +3,7 @@ package gr.cite.earthserver.xwcpsmars.application.resources;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import gr.cite.earthserver.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.application.utils.RequestInfo;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
@@ -13,6 +14,7 @@ import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
+import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 import gr.cite.earthserver.xwcpsmars.utils.WCSRequestParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,19 +89,19 @@ public class IntegrationResource {
 			long translationStart = System.currentTimeMillis();
 
 			WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(requestUriInfo.getQueryParameters(), this.registryClient);
-			MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
+			WcsRequestProcessingResult wcsRequestProcessingResult = wcsRequestParameters.buildMarsRequest();
 
 			long translationEnd = System.currentTimeMillis();
 			logger.info("[" + requestId + "] Query translation time [" + (translationEnd - translationStart) + " ms]");
 
-			if (marsRequest != null) {
+			if (wcsRequestProcessingResult.getMarsRequest() != null) {
 				//this.requests.put(requestId, new RequestInfo(requestId, RequestInfo.RequestStatus.IN_PROGRESS));
 				try {
-					this.marsClient.retrieve(requestId, marsRequest);
+					this.marsClient.retrieve(requestId, wcsRequestProcessingResult.getMarsRequest());
 				} catch (MarsClientException e) {
 					logger.error(e.getMessage(), e);
 				}
-				ingestAndQueryRasdaman(requestId, wcsRequestParameters.getCoverageId(), requestUriInfo);
+				ingestAndQueryRasdaman(requestId, wcsRequestParameters.getCoverageId(), requestUriInfo, wcsRequestProcessingResult);
 			} else {
 				return Response.status(Response.Status.NOT_FOUND).build();
 			}
@@ -139,13 +141,13 @@ public class IntegrationResource {
 			long translationStart = System.currentTimeMillis();
 
 			WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(wcsRequestUriInfo.getQueryParameters(), this.registryClient);
-			MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
+			WcsRequestProcessingResult wcsRequestProcessingResult = wcsRequestParameters.buildMarsRequest();
 
 			long translationEnd = System.currentTimeMillis();
 			logger.info("[" + requestId + "] Query translation time [" + (translationEnd - translationStart) + " ms]");
 
-			if (marsRequest != null) {
-				Thread marsThread = new Thread(() -> executeMarsRequest(wcsRequestUriInfo, requestId, wcsRequestParameters.getCoverageId(), marsRequest));
+			if (wcsRequestProcessingResult.getMarsRequest() != null) {
+				Thread marsThread = new Thread(() -> executeMarsRequest(wcsRequestUriInfo, requestId, wcsRequestParameters.getCoverageId(), wcsRequestProcessingResult));
 				marsThread.start();
 			} else {
 				return Response.status(Response.Status.NOT_FOUND).build();
@@ -158,9 +160,9 @@ public class IntegrationResource {
 		return Response.ok(this.uriInfo.getBaseUriBuilder().path(IntegrationResource.class).path("responses").path(requestId).build().toASCIIString()).build();
 	}
 
-	private void executeMarsRequest(UriInfo requestUriInfo, String requestId, String coverageId, MarsRequest marsRequest) {
+	private void executeMarsRequest(UriInfo requestUriInfo, String requestId, String coverageId, WcsRequestProcessingResult wcsRequestProcessingResult) {
 		try {
-			this.marsClient.retrieve(requestId, marsRequest, ingestAndQueryRasdamanCallback(requestId, coverageId, requestUriInfo));
+			this.marsClient.retrieve(requestId, wcsRequestProcessingResult.getMarsRequest(), ingestAndQueryRasdamanCallback(requestId, coverageId, requestUriInfo, wcsRequestProcessingResult));
 		} catch (MarsClientException e) {
 			this.requests.get(requestId).setStatus(RequestInfo.RequestStatus.ERROR);
 			logger.error(e.getMessage(), e);
@@ -171,18 +173,18 @@ public class IntegrationResource {
 
 	}
 
-	private Runnable ingestAndQueryRasdamanCallback(String requestId, String coverageId, UriInfo wcsRequestUriInfo) {
+	private Runnable ingestAndQueryRasdamanCallback(String requestId, String coverageId, UriInfo wcsRequestUriInfo, WcsRequestProcessingResult wcsRequestProcessingResult) {
 		return () -> {
 			try {
-				ingestAndQueryRasdaman(requestId, coverageId, wcsRequestUriInfo);
+				ingestAndQueryRasdaman(requestId, coverageId, wcsRequestUriInfo, wcsRequestProcessingResult);
 			} catch (RasdamanException e) {
 				throw new RuntimeException(e);
 			}
 		};
 	}
 
-	private void ingestAndQueryRasdaman(String requestId, String coverageId, UriInfo wcsRequestUriInfo) throws RasdamanException {
-		this.rasdamanClient.ingest(coverageId, Paths.get(this.marsClient.getTargetPath(), requestId).toString(), requestId);
+	private void ingestAndQueryRasdaman(String requestId, String coverageId, UriInfo wcsRequestUriInfo, WcsRequestProcessingResult wcsRequestProcessingResult) throws RasdamanException {
+		this.rasdamanClient.ingest(coverageId, Paths.get(this.marsClient.getTargetPath(), requestId).toString(), requestId, wcsRequestProcessingResult.getAxesBounds(), wcsRequestProcessingResult.getAxesDirectPositions());
 		this.rasdamanClient.query(wcsRequestUriInfo.getRequestUri().getQuery(), requestId);
 	}
 
@@ -265,7 +267,7 @@ public class IntegrationResource {
 		if (requestMapping != null) {
 			Runnable rasdamanIngestionAndQuery = () -> {
 				try {
-					this.rasdamanClient.ingest("", this.marsClient.getTargetPath() + "/" + marsTargetFilename, rasdamanResponseFilename);
+					//this.rasdamanClient.ingest("", this.marsClient.getTargetPath() + "/" + marsTargetFilename, rasdamanResponseFilename);
 					this.rasdamanClient.query("", rasdamanResponseFilename);
 					//this.coverageRegistryRasdamanConnector.ingestAndQueryRasdaman("", this.marsClient.getTargetPath() + "/" + marsTargetFilename, query, rasdamanResponseFilename);
 				} catch (Exception e) {

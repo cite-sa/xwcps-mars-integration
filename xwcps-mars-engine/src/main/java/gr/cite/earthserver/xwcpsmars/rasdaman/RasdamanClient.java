@@ -1,5 +1,6 @@
 package gr.cite.earthserver.xwcpsmars.rasdaman;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import gr.cite.commons.utils.xml.XMLConverter;
 import gr.cite.commons.utils.xml.XPathEvaluator;
@@ -7,6 +8,7 @@ import gr.cite.commons.utils.xml.exceptions.XMLConversionException;
 import gr.cite.commons.utils.xml.exceptions.XPathEvaluationException;
 import gr.cite.earthserver.wcs.core.WCSRequest;
 import gr.cite.earthserver.wcs.core.WCSRequestBuilder;
+import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 import org.glassfish.jersey.uri.UriComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +34,18 @@ import java.util.stream.Stream;
 public class RasdamanClient implements RasdamanClientAPI {
 	private static final Logger logger = LoggerFactory.getLogger(RasdamanClient.class);
 
+	private static final ObjectMapper mapper = new ObjectMapper();
+
 	//private static final String MOCK_PLACEHOLDER = "$MOCK_PLACEHOLDER$";
 	private static final String COVERAGE_ID_PLACEHOLDER = "$COVERAGE_ID_PLACEHOLDER$";
 	private static final String COVERAGE_FILE_PLACEHOLDER = "$COVERAGE_FILE_PLACEHOLDER$";
+
+	private static final String COVERAGE_AXIS_MIN_BOUND_PLACEHOLDER = "$#AXIS_LABEL#_AXIS_MIN_BOUND$";
+	private static final String COVERAGE_AXIS_MAX_BOUND_PLACEHOLDER = "$#AXIS_LABEL#_AXIS_MAX_BOUND$";
+	private static final String COVERAGE_AXIS_DIERCT_POSITIONS_PLACEHOLDER = "$#AXIS_LABEL#_AXIS_DIRECT_POSITIONS$";
+
+	private static final String AXIS_LABEL_PLACEHOLDER = "#AXIS_LABEL#";
+
 
 	private static final String INSERT_COVERAGE = "InsertCoverage";
 	private static final String UPDATE_COVERAGE = "UpdateCoverage";
@@ -110,19 +121,33 @@ public class RasdamanClient implements RasdamanClientAPI {
 	}
 
 	@Override
-	public void ingest(String coverageId, String marsTargetFile, String ingestionFilename) throws RasdamanException {
+	public void ingest(String coverageId, String marsTargetFile, String ingestionFilename, Map<String, AxisEnvelope> axesBounds, Map<String, List<String>> axesDirectPositions) throws RasdamanException {
 		Path ingredientFilePath = Paths.get(this.ingestionPath, ingestionFilename + "_ingredient.json");
 		Path logFilePath = Paths.get(this.ingestionPath, ingestionFilename + ".log");
 
-		String ingredientContent = buildIngredientContentFromTemplate(coverageId, marsTargetFile);
+		String ingredientContent = buildIngredientContentFromTemplate(coverageId, marsTargetFile, axesBounds, axesDirectPositions);
 		ingest(ingredientContent, ingredientFilePath, logFilePath);
 		cleanupDebugFiles(ingredientFilePath, logFilePath);
 	}
 
-	private String buildIngredientContentFromTemplate(String coverageId, String marsTargetFile) throws RasdamanException {
+	private String buildIngredientContentFromTemplate(String coverageId, String marsTargetFile, Map<String, AxisEnvelope> axesBounds, Map<String, List<String>> axesDirectPositions) throws RasdamanException {
 		try {
 			String ingredientTemplateContent = Resources.toString(Resources.getResource(coverageId + this.ingredientTemplateFileNameSuffix), StandardCharsets.UTF_8);
-			return ingredientTemplateContent.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, coverageId).replace(RasdamanClient.COVERAGE_FILE_PLACEHOLDER, marsTargetFile);
+			ingredientTemplateContent = ingredientTemplateContent.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, coverageId).replace(RasdamanClient.COVERAGE_FILE_PLACEHOLDER, marsTargetFile);
+
+			for (Map.Entry<String, AxisEnvelope> entry: axesBounds.entrySet()) {
+				ingredientTemplateContent = ingredientTemplateContent
+						.replace(RasdamanClient.COVERAGE_AXIS_MIN_BOUND_PLACEHOLDER.replace(RasdamanClient.AXIS_LABEL_PLACEHOLDER, entry.getKey()), entry.getValue().getMin());
+				ingredientTemplateContent = ingredientTemplateContent
+						.replace(RasdamanClient.COVERAGE_AXIS_MAX_BOUND_PLACEHOLDER.replace(RasdamanClient.AXIS_LABEL_PLACEHOLDER, entry.getKey()), entry.getValue().getMax());
+			}
+
+			for (Map.Entry<String, List<String>> entry: axesDirectPositions.entrySet()) {
+				ingredientTemplateContent = ingredientTemplateContent
+						.replace(RasdamanClient.COVERAGE_AXIS_DIERCT_POSITIONS_PLACEHOLDER.replace(RasdamanClient.AXIS_LABEL_PLACEHOLDER, entry.getKey()), entry.getValue().toString());
+			}
+
+			return ingredientTemplateContent;
 		} catch (IOException e) {
 			throw new RasdamanException("Ingredient file creation failed", e);
 		}

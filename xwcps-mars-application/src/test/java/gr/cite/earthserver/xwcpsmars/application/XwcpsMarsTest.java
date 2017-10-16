@@ -1,5 +1,6 @@
 package gr.cite.earthserver.xwcpsmars.application;
 
+import gr.cite.earthserver.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.rasdaman.CoverageRegistryRasdamanConnector;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient;
@@ -212,7 +213,7 @@ public class XwcpsMarsTest {
 		map.add("subset", "ansi(\"2003-04-12T18:00\")");
 
 		WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(map, this.coverageRegistryRasdamanConnector.getCoverageRegistry());
-		MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
-		System.out.println(marsRequest);
+		WcsRequestProcessingResult wcsRequestProcessingResult = wcsRequestParameters.buildMarsRequest();
+		System.out.println(wcsRequestProcessingResult);
 	}
 }

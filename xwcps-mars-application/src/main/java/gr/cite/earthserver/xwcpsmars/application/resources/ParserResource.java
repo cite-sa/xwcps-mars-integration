@@ -1,5 +1,6 @@
 package gr.cite.earthserver.xwcpsmars.application.resources;
 
+import gr.cite.earthserver.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
@@ -40,14 +41,14 @@ public class ParserResource {
 			long startTime = System.currentTimeMillis();
 
 			WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(requestUriInfo.getQueryParameters(), this.coverageRegistry);
-			MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
+			WcsRequestProcessingResult wcsRequestProcessingResult = wcsRequestParameters.buildMarsRequest();
 
 			long endTime = System.currentTimeMillis();
 			logger.info("Query translation execution time [" + (endTime - startTime) + "]");
 
-			marsRequest.setTarget(this.marsClient.getTargetPath() + "/" + UUID.randomUUID().toString());
+			wcsRequestProcessingResult.getMarsRequest().setTarget(this.marsClient.getTargetPath() + "/" + UUID.randomUUID().toString());
 
-			return Response.ok(marsRequest).build();
+			return Response.ok(wcsRequestProcessingResult.getMarsRequest()).build();
 		} catch (CoverageRegistryException e) {
 			throw new WebApplicationException(e.getMessage(), e);
 		}
