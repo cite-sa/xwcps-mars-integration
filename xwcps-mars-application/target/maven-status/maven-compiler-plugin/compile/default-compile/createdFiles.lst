@@ -1,0 +1,15 @@
+gr/cite/earthserver/xwcpsmars/application/utils/RequestInfo.class
+gr/cite/earthserver/xwcpsmars/application/dto/XwcpsMarsResponseEntity.class
+gr/cite/earthserver/xwcpsmars/mocks/RasdamanClientMock.class
+gr/cite/earthserver/xwcpsmars/mocks/MarsClientMock.class
+gr/cite/earthserver/xwcpsmars/application/resources/MarsResource.class
+gr/cite/earthserver/xwcpsmars/application/dto/XwcpsMarsResponse.class
+gr/cite/earthserver/xwcpsmars/mars/XwcpsMarsMapping.class
+gr/cite/earthserver/xwcpsmars/mars/XwcpsMarsMappings.class
+gr/cite/earthserver/xwcpsmars/application/utils/RequestInfo$RequestStatus.class
+gr/cite/earthserver/xwcpsmars/application/CORSResponseFilter.class
+gr/cite/earthserver/xwcpsmars/application/resources/IntegrationResource.class
+gr/cite/earthserver/xwcpsmars/application/resources/ParserResource.class
+gr/cite/earthserver/xwcpsmars/application/XwcpsMarsApplication.class
+gr/cite/earthserver/xwcpsmars/application/resources/CoverageRegistryResource.class
+gr/cite/earthserver/xwcpsmars/application/resources/RasdamanResource.class

@@ -1,0 +1,13 @@
+gr.cite.earthserver.xwcpsmars.debug=true
+
+gr.cite.earthserver.xwcpsmars.mars.client.script.command=python /home/kapostolopoulos/Desktop/xwcps-mars/mars/mars_retrieve.py
+gr.cite.earthserver.xwcpsmars.mars.target.path=/home/kapostolopoulos/Desktop/xwcps-mars/mars/responses
+
+gr.cite.earthserver.xwcpsmars.rasdaman.endpoint=http\://earthserver.ecmwf.int/rasdaman/ows
+gr.cite.earthserver.xwcpsmars.rasdaman.script.command=python /home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/wcst_import.py
+gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.suffix=-ingredient-template.json
+gr.cite.earthserver.xwcpsmars.rasdaman.registration.path=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/registration
+gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/ingestion
+gr.cite.earthserver.xwcpsmars.rasdaman.response.path=/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/responses
+
+gr.cite.earthserver.xwcpsmars.femme.endpoint=http://localhost:8090/femme-application-devel
