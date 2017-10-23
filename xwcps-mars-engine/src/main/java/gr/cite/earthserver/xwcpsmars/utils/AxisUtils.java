@@ -5,9 +5,12 @@ import org.slf4j.LoggerFactory;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -293,7 +296,8 @@ public class AxisUtils {
 				return coefficients.stream().map(Double::parseDouble)
 						.map(coefficient -> LocalDateTime.from(DateTimeUtil.increaseDateTimeByCoefficientOfDay(originDateTime, coefficient)))
 						.filter(dateTime -> dateTime.isAfter(minBoundDateTime) && dateTime.isBefore(maxBoundDateTime) || dateTime.isEqual(minBoundDateTime) || dateTime.isEqual(maxBoundDateTime))
-						.map(localDateTime -> "\\\"" + localDateTime.toString() + "\\\"")
+						.map(localDateTime -> localDateTime.toInstant(ZoneOffset.UTC))
+						.map(instant -> "\\\"" + instant + "\\\"")
 						.collect(Collectors.toList());
 			} else if (AxisDirectPositions.isNumber(originPoint)) {
 				Number originValue = AxisDirectPositions.parseNumber(originPoint);
@@ -357,13 +361,19 @@ public class AxisUtils {
 		//}).filter(Objects::nonNull).collect(Collectors.toList());
 		//System.out.println(longs.size());
 
-		List<String> list = new ArrayList<>();
+		/*List<String> list = new ArrayList<>();
 		list.add("\\\"1\\\"");
 		list.add("\\\"2\\\"");
 		list.add("\\\"3\\\"");
-		System.out.println(list);
+		System.out.println(list);*/
 
 		String dateTime = "2014-01-01T00:00";
+		LocalDateTime ldt = LocalDateTime.parse(dateTime);
+		ZonedDateTime zdt = ZonedDateTime.from(ldt.atZone(ZoneId.of("UTC")));
+		Instant i = ldt.toInstant(ZoneOffset.UTC);
+		
+		System.out.println(i);
+		System.out.println(zdt);
 	}
 
 }

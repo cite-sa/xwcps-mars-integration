@@ -13,6 +13,7 @@ import gr.cite.femme.client.FemmeClient;
 import gr.cite.femme.client.FemmeClientException;
 import gr.cite.femme.client.FemmeException;
 import gr.cite.femme.client.api.FemmeClientAPI;
+import gr.cite.femme.core.dto.QueryOptionsMessenger;
 import gr.cite.femme.core.model.Collection;
 import gr.cite.femme.core.model.DataElement;
 import gr.cite.femme.core.model.Metadatum;
@@ -115,6 +116,15 @@ public class CoverageRegistry {
 			}
 		} catch (FemmeException | FemmeClientException e) {
 			throw new CoverageRegistryException(e.getMessage(), e);
+		}
+	}
+	
+	public List<String> getRegisteredCoverageIds() throws CoverageRegistryException {
+		try {
+			return this.femmeClient.getDataElements(null, null, Collections.singletonList("name"), null, null).stream()
+					.map(DataElement::getName).collect(Collectors.toList());
+		} catch (FemmeException | FemmeClientException e) {
+			throw new CoverageRegistryException(e);
 		}
 	}
 

@@ -63,14 +63,14 @@
               "max": "$Long_AXIS_MAX_BOUND$",
               "gridOrder": 1,
               "dataBound" : true,
-              "resolution": "-${grib:iDirectionIncrementInDegrees} if bool(${grib:iScansNegatively}) else ${grib:iDirectionIncrementInDegrees}"
+              "resolution": 0.5
             },
             "Lat": {
               "min": "$Lat_AXIS_MIN_BOUND$",
               "max": "$Lat_AXIS_MAX_BOUND$",
               "gridOrder": 2,
               "dataBound" : true,
-              "resolution": "${grib:jDirectionIncrementInDegrees} if bool(${grib:jScansPositively}) else -${grib:jDirectionIncrementInDegrees}"
+              "resolution": -0.5
             }
           }
         }

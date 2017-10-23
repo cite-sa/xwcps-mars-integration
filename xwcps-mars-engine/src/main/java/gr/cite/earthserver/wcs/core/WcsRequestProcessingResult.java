@@ -11,6 +11,7 @@ import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class WcsRequestProcessingResult {
+	
 	@JsonProperty("axesBounds")
 	private Map<String, AxisEnvelope> axesBounds;
 
