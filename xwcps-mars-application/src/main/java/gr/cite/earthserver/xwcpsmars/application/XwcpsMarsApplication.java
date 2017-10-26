@@ -1,6 +1,5 @@
 package gr.cite.earthserver.xwcpsmars.application;
 
-import gr.cite.earthserver.xwcpsmars.application.resources.IntegrationResource;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 

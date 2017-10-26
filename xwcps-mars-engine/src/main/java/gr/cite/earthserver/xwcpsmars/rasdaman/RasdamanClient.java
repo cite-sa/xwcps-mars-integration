@@ -266,6 +266,10 @@ public class RasdamanClient implements RasdamanClientAPI {
 	}
 
 	private String buildRegistrationMetadata(Map<String, String> metadata) throws RasdamanException {
+		metadata.forEach((key, value)-> {
+			logger.debug(key);
+			logger.debug(value);
+		});
 		String gmlcovMetadata = extractGmlcovMetadataFromInsertCoverageMetadata(metadata.get(RasdamanClient.INSERT_COVERAGE));
 		return integrateInsertAndUpdateCoverageMetadata(metadata.get(RasdamanClient.UPDATE_COVERAGE), gmlcovMetadata);
 	}
@@ -273,7 +277,9 @@ public class RasdamanClient implements RasdamanClientAPI {
 	private String extractGmlcovMetadataFromInsertCoverageMetadata(String insertCoverageMetadata) throws RasdamanException {
 		try {
 			if (insertCoverageMetadata != null) {
-				return new XPathEvaluator(XMLConverter.stringToNode(insertCoverageMetadata)).evaluate("//gmlcov:metadata/text()").get(0);
+				List<String> xPathResults = new XPathEvaluator(XMLConverter.stringToNode(insertCoverageMetadata)).evaluate("//gmlcov:metadata/text()");
+				return xPathResults.size() > 0 ? xPathResults.get(0) : "";
+				//return new XPathEvaluator(XMLConverter.stringToNode(insertCoverageMetadata)).evaluate("//gmlcov:metadata/text()").get(0);
 			} else {
 				throw new RasdamanException("No InsertCoverage metadata found");
 			}
