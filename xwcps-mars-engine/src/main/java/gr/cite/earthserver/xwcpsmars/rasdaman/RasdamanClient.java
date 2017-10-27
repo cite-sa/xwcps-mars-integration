@@ -33,8 +33,10 @@ public class RasdamanClient implements RasdamanClientAPI {
 	private static final Logger logger = LoggerFactory.getLogger(RasdamanClient.class);
 	
 	//private static final String MOCK_PLACEHOLDER = "$MOCK_PLACEHOLDER$";
-	private static final String COVERAGE_ID_PLACEHOLDER = "$COVERAGE_ID_PLACEHOLDER$";
-	private static final String COVERAGE_FILE_PLACEHOLDER = "$COVERAGE_FILE_PLACEHOLDER$";
+	private static final String RASDAMAN_BASE_URL_PLACEHOLDER = "$$RASDAMAN_BASE_URL_PLACEHOLDER$$";
+	
+	private static final String COVERAGE_ID_PLACEHOLDER = "$$COVERAGE_ID_PLACEHOLDER$$";
+	private static final String COVERAGE_FILE_PLACEHOLDER = "$$COVERAGE_FILE_PLACEHOLDER$$";
 	
 	private static final String INSERT_COVERAGE = "InsertCoverage";
 	private static final String UPDATE_COVERAGE = "UpdateCoverage";
@@ -42,6 +44,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 	private static final String GMLCOV_METADATA_CLOSING_TAG = "</gmlcov:metadata>";
 	
 	//private String endpoint;
+	private String baseEndpoint;
 	private String scriptCommand;
 	private String ingredientTemplateFileNameSuffix;
 	private String registrationPath;
@@ -49,12 +52,16 @@ public class RasdamanClient implements RasdamanClientAPI {
 	private String responsePath;
 	
 	private boolean debug;
+	private boolean deleteIngestedCoverage;
 	
 	private WebTarget webTarget;
 	private WCSRequestBuilder wcsRequestBuilder;
 	
 	@Inject
-	public RasdamanClient(String endpoint, String scriptCommand, String ingredientTemplateFileNameSuffix, String registrationPath, String ingestionPath, String responsePath, boolean debug) throws IOException {
+	public RasdamanClient(String baseEndpoint, String endpoint, String scriptCommand,
+						  String ingredientTemplateFileNameSuffix, String registrationPath, String ingestionPath, String responsePath,
+						  boolean debug, boolean deleteIngestedCoverage) throws IOException {
+		this.baseEndpoint = baseEndpoint;
 		this.scriptCommand = scriptCommand;
 		this.ingredientTemplateFileNameSuffix = ingredientTemplateFileNameSuffix;
 		this.registrationPath = registrationPath;
@@ -62,6 +69,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 		this.responsePath = responsePath;
 		
 		this.debug = debug;
+		this.deleteIngestedCoverage = deleteIngestedCoverage;
 		
 		this.wcsRequestBuilder = WCSRequest.newBuilder().endpoint(endpoint);
 		this.webTarget = ClientBuilder.newClient().target(endpoint);
@@ -122,7 +130,12 @@ public class RasdamanClient implements RasdamanClientAPI {
 	private String buildIngredientContentFromTemplate(String coverageId, String marsTargetFile) throws RasdamanException {
 		try {
 			String ingredientTemplateContent = Resources.toString(Resources.getResource(coverageId + this.ingredientTemplateFileNameSuffix), StandardCharsets.UTF_8);
-			return ingredientTemplateContent.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, coverageId).replace(RasdamanClient.COVERAGE_FILE_PLACEHOLDER, marsTargetFile);
+			
+			ingredientTemplateContent = ingredientTemplateContent.replace(RasdamanClient.RASDAMAN_BASE_URL_PLACEHOLDER, this.baseEndpoint)
+					.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, coverageId)
+					.replace(RasdamanClient.COVERAGE_FILE_PLACEHOLDER, marsTargetFile);
+			
+			return ingredientTemplateContent;
 		} catch (IOException e) {
 			throw new RasdamanException("Ingredient file creation failed", e);
 		}
@@ -292,7 +305,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 	}
 	
 	@Override
-	public String query(String wcsRequest, String rasdamanResponseFilename) throws RasdamanException {
+	public String query(String coverageId, String wcsRequest, String rasdamanResponseFilename) throws RasdamanException {
 		String loggingIdMsg = "[" + rasdamanResponseFilename + "] ";
 		
 		Invocation rasdamanWcsRequest = buildWcsRequest(wcsRequest, this.webTarget);
@@ -307,6 +320,11 @@ public class RasdamanClient implements RasdamanClientAPI {
 		if (rasdamanResponse.getStatus() != 200) {
 			throw new RasdamanException(loggingIdMsg + "Rasdaman request " + wcsRequest + " failed. " + rasdamanResponse.getStatusInfo().getReasonPhrase());
 		}
+		
+		if (this.deleteIngestedCoverage) {
+			delete(coverageId);
+		}
+		
 		return response;
 	}
 	

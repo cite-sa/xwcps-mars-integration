@@ -29,13 +29,15 @@ public class XwcpsMarsTest {
 //	@Before
 	public void init() throws FemmeException, CoverageRegistryException, RasdamanException, IOException {
 		this.rasdamanClient = new RasdamanClient(
+				"\"http://earthserver.ecmwf.int",
 				"http://earthserver.ecmwf.int/rasdaman/ows",
 				"python /home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/wcst_import.py",
 				"ingredients_template.json",
 				"/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/ingredients",
 				"/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/registration",
 				"/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/responses",
-				true
+				true,
+				false
 				);
 		this.femmeClient = new FemmeClient("http://localhost:8090/femme-application-devel");
 		this.coverageRegistry = new CoverageRegistry(this.femmeClient);

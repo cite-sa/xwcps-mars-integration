@@ -56,7 +56,7 @@ public class CoverageRegistryRasdamanConnector {
 		this.rasdamanClient.ingest(coverageId, marsTargetFile, responseFilename);
 		logger.debug("Rasdaman ingestion: [" + Duration.between(start, Instant.now()).toMillis() + "ms]");
 		start = Instant.now();
-		this.rasdamanClient.query(wcpsQuery, responseFilename);
+		this.rasdamanClient.query(coverageId, wcpsQuery, responseFilename);
 		logger.debug("Rasdaman query: [" + Duration.between(start, Instant.now()).toMillis() + "ms]");
 
 		//this.rasdamanClient.delete(coverageId);

@@ -51,6 +51,9 @@ public class WcsRequestProcessing {
 	private ProcessCoverages processCoveragesRequest;
 	
 	private boolean isGetCapabilitiesRequest = false;
+	private boolean isDescribeCoverageRequest = false;
+	private boolean isGetCoverageRequest = false;
+	private boolean isProcessCoveragesRequest = false;
 	
 	private CoverageRegistry coverageRegistry;
 	
@@ -58,6 +61,11 @@ public class WcsRequestProcessing {
 		this.coverageRegistry = coverageRegistry;
 		
 		requestParameters.forEach((name, value) -> {
+			logger.debug(name + " " + value);
+		});
+		
+		requestParameters.forEach((name, value) -> {
+			name = name.toLowerCase();
 			switch (name) {
 				case WcsRequestProcessing.SERVICE:
 					this.service = value.get(0);
@@ -67,18 +75,31 @@ public class WcsRequestProcessing {
 					break;
 				case WcsRequestProcessing.REQUEST:
 					this.request = value.get(0);
+					logger.debug(this.request);
 					
 					if (WcsRequestProcessing.GET_COVERAGE.equals(this.request) || WcsRequestProcessing.DESCRIBE_COVERAGE.equals(this.request)) {
+						
+						if (WcsRequestProcessing.GET_COVERAGE.equals(this.request)) {
+							this.isGetCoverageRequest = true;
+						} else if (WcsRequestProcessing.DESCRIBE_COVERAGE.equals(this.request)) {
+							this.isDescribeCoverageRequest = true;
+						}
+						
 						this.getDescribeCoverageRequest = new GetDescribeCoverage();
 						this.getDescribeCoverageRequest.setCoverageId(requestParameters.get("coverageId").get(0));
 						this.getDescribeCoverageRequest.setSubsets(requestParameters.get("subset"));
+						
+						this.coverageId = this.getDescribeCoverageRequest.getCoverageId();
 					} else if (WcsRequestProcessing.PROCESS_COVERAGES.equals(this.request)) {
+						this.isProcessCoveragesRequest = true;
+						
 						this.processCoveragesRequest = new ProcessCoverages();
 						if (requestParameters.get("query") == null) {
 							throw new IllegalArgumentException("No query parameter specified in ProcessCoverages request");
 						}
 						this.processCoveragesRequest.setQuery(requestParameters.get("query").get(0));
 					} else if (WcsRequestProcessing.GET_CAPABILITIES.equals(this.request)) {
+						logger.debug("GetCapabilitiesRequest: " + this.isGetCapabilitiesRequest);
 						this.isGetCapabilitiesRequest = true;
 					}
 					
@@ -92,7 +113,31 @@ public class WcsRequestProcessing {
 	}
 	
 	public boolean isGetCapabilitiesRequest() {
-		return this.isGetCapabilitiesRequest;
+		return isGetCapabilitiesRequest;
+	}
+	
+	public boolean isDescribeCoverageRequest() {
+		return isDescribeCoverageRequest;
+	}
+	
+	public void setDescribeCoverageRequest(boolean describeCoverageRequest) {
+		isDescribeCoverageRequest = describeCoverageRequest;
+	}
+	
+	public boolean isGetCoverageRequest() {
+		return isGetCoverageRequest;
+	}
+	
+	public void setGetCoverageRequest(boolean getCoverageRequest) {
+		isGetCoverageRequest = getCoverageRequest;
+	}
+	
+	public boolean isProcessCoveragesRequest() {
+		return isProcessCoveragesRequest;
+	}
+	
+	public void setProcessCoveragesRequest(boolean processCoveragesRequest) {
+		isProcessCoveragesRequest = processCoveragesRequest;
 	}
 	
 	public String buildGetCapabilitiesDocument() throws CoverageRegistryException, IOException {

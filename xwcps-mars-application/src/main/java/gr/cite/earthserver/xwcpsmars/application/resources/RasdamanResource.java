@@ -42,9 +42,9 @@ public class RasdamanResource {
 	@GET
 	@Path("coverages/{requestId}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response query(@PathParam("requestId") String requestId, @Context UriInfo wcsRequest) {
+	public Response query(@PathParam("requestId") String requestId, @QueryParam("coverageId") String coverageId, @Context UriInfo wcsRequest) {
 		try {
-			String response = this.rasdamanClient.query(wcsRequest.getRequestUri().getQuery(), requestId);
+			String response = this.rasdamanClient.query(coverageId, wcsRequest.getRequestUri().getQuery(), requestId);
 			return Response.ok().entity(response).type(MediaType.APPLICATION_XML).build();
 		} catch (RasdamanException e) {
 			throw new WebApplicationException(e.getMessage(), e);

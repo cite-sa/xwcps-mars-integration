@@ -1,9 +1,9 @@
 {
   "config": {
-    "service_url": "http://earthserver2d.ecmwf.int:8080/rasdaman/ows",
+    "service_url": "$$RASDAMAN_BASE_URL_PLACEHOLDER$$/rasdaman/ows",
     "tmp_directory": "/tmp/",
-    "crs_resolver": "http://earthserver2d.ecmwf.int:8080/def/",
-    "default_crs": "http://earthserver2d.ecmwf.int:8080/def/OGC/0/Index2D",
+    "crs_resolver": "$$RASDAMAN_BASE_URL_PLACEHOLDER$$/def/",
+    "default_crs": "$$RASDAMAN_BASE_URL_PLACEHOLDER$$/def/OGC/0/Index2D",
     "mock": false,
     "automated": true,
     "retry": true,
@@ -13,9 +13,9 @@
     "insitu": true
   },
   "input": {
-    "coverage_id": "$COVERAGE_ID_PLACEHOLDER$",
+    "coverage_id": "$$COVERAGE_ID_PLACEHOLDER$$",
     "paths": [
-      "$COVERAGE_FILE_PLACEHOLDER$"
+      "$$COVERAGE_FILE_PLACEHOLDER$$"
     ]
   },
   "recipe": {
@@ -37,7 +37,6 @@
         },
         "slicer": {
           "type": "grib",
-          "optimise": "true",
           "pixelIsPoint": true,
           "bands": [
             {
@@ -50,24 +49,23 @@
           ],
           "axes": {
             "reftime": {
-              "min": "$reftime_AXIS_MIN_BOUND$",
-              "max": "$reftime_AXIS_MAX_BOUND$",
+              "min": "grib_datetime(${grib:dataDate}, ${grib:dataTime})",
               "gridOrder": 0,
               "type": "ansidate",
               "irregular": true,
-              "directPositions": "$reftime_AXIS_DIRECT_POSITIONS$",
+              "directPositions": "${grib:axis:reftime}",
               "dataBound" : true
             },
             "Long": {
-              "min": "$Long_AXIS_MIN_BOUND$",
-              "max": "$Long_AXIS_MAX_BOUND$",
+              "min": "${grib:longitudeOfFirstGridPointInDegrees}",
+              "max": "${grib:longitudeOfLastGridPointInDegrees}",
               "gridOrder": 1,
               "dataBound" : true,
               "resolution": "-${grib:iDirectionIncrementInDegrees} if bool(${grib:iScansNegatively}) else ${grib:iDirectionIncrementInDegrees}"
             },
             "Lat": {
-              "min": "$Lat_AXIS_MIN_BOUND$",
-              "max": "$Lat_AXIS_MAX_BOUND$",
+              "min": "${grib:latitudeOfLastGridPointInDegrees}",
+              "max": "${grib:latitudeOfFirstGridPointInDegrees}",
               "gridOrder": 2,
               "dataBound" : true,
               "resolution": "${grib:jDirectionIncrementInDegrees} if bool(${grib:jScansPositively}) else -${grib:jDirectionIncrementInDegrees}"

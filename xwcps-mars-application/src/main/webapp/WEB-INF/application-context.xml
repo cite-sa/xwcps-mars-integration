@@ -67,6 +67,7 @@
 		</bean>
 
 		<bean id="rasdamanClient" class="gr.cite.earthserver.xwcpsmars.mocks.RasdamanClientMock">
+			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint.base}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.command}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.suffix}" />
@@ -74,6 +75,7 @@
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.response.path}" />
 			<constructor-arg type="boolean" value="${gr.cite.earthserver.xwcpsmars.debug}" />
+			<constructor-arg type="boolean" value="${gr.cite.earthserver.xwcpsmars.debug.deleteIngestedCoverage}" />
 		</bean>
 	</beans>
 
@@ -85,6 +87,7 @@
 		</bean>
 
 		<bean id="rasdamanClient" class="gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient">
+			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint.base}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.command}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.suffix}" />
@@ -92,6 +95,7 @@
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.response.path}" />
 			<constructor-arg type="boolean" value="${gr.cite.earthserver.xwcpsmars.debug}" />
+			<constructor-arg type="boolean" value="${gr.cite.earthserver.xwcpsmars.debug.deleteIngestedCoverage}" />
 		</bean>
 	</beans>
 </beans>

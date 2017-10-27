@@ -68,7 +68,7 @@ public class IntegrationResource {
 	
 	@GET
 	@Path("requests")
-	@Produces(MediaType.APPLICATION_XML)
+	@Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_XML})
 	public Response request(@Context UriInfo wcsRequestUriInfo) {
 		try {
 			this.registryClient.registerMarsCollection();
@@ -84,8 +84,12 @@ public class IntegrationResource {
 			
 			WcsRequestProcessing wcsRequestProcessing = new WcsRequestProcessing(wcsRequestUriInfo.getQueryParameters(), this.registryClient);
 			
+			logger.debug("Is it GetCapabilities? -> " + wcsRequestProcessing.isGetCapabilitiesRequest());
 			if (wcsRequestProcessing.isGetCapabilitiesRequest()) {
-				return Response.ok(wcsRequestProcessing.buildGetCapabilitiesDocument()).build();
+				return Response.ok().entity(wcsRequestProcessing.buildGetCapabilitiesDocument()).type(MediaType.APPLICATION_XML).build();
+			} else if (wcsRequestProcessing.isDescribeCoverageRequest()) {
+				String describeCoverageResponse = this.registryClient.getMetadata(wcsRequestProcessing.getCoverageId());
+				return Response.ok().entity(describeCoverageResponse).type(MediaType.APPLICATION_XML).build();
 			} else {
 				WcsRequestProcessingResult wcsRequestProcessingResult = wcsRequestProcessing.buildMarsRequest();
 				
@@ -123,7 +127,8 @@ public class IntegrationResource {
 			throw new WebApplicationException(e);
 		}
 		
-		return Response.ok().entity(rasdamanResponse).type(MediaType.APPLICATION_XML).build();
+		return Response.ok().entity(rasdamanResponse).type(MediaType.TEXT_PLAIN).build();
+		//return Response.ok().entity(rasdamanResponse).type(MediaType.APPLICATION_XML).build();
 	}
 	
 	@GET
@@ -147,6 +152,9 @@ public class IntegrationResource {
 			
 			if (wcsRequestProcessing.isGetCapabilitiesRequest()) {
 				return Response.ok(wcsRequestProcessing.buildGetCapabilitiesDocument()).build();
+			} else if (wcsRequestProcessing.isDescribeCoverageRequest()) {
+				String describeCoverageResponse = this.registryClient.getMetadata(wcsRequestProcessing.getCoverageId());
+				return Response.ok().entity(describeCoverageResponse).type(MediaType.APPLICATION_XML).build();
 			} else {
 				WcsRequestProcessingResult wcsRequestProcessingResult = wcsRequestProcessing.buildMarsRequest();
 				
@@ -165,7 +173,10 @@ public class IntegrationResource {
 			throw new WebApplicationException(e);
 		}
 		
-		return Response.ok(this.uriInfo.getBaseUriBuilder().path(IntegrationResource.class).path("responses").path(requestId).build().toASCIIString()).build();
+		return Response.ok().
+				entity(wcsRequestUriInfo.getBaseUriBuilder().path(IntegrationResource.class).path("responses").path(requestId).build().toASCIIString())
+				.type(MediaType.TEXT_PLAIN)
+				.build();
 	}
 	
 	private void executeMarsRequest(UriInfo requestUriInfo, String requestId, String coverageId, WcsRequestProcessingResult wcsRequestProcessingResult) {
@@ -193,7 +204,7 @@ public class IntegrationResource {
 	
 	private void ingestAndQueryRasdaman(String requestId, String coverageId, UriInfo wcsRequestUriInfo) throws RasdamanException {
 		this.rasdamanClient.ingest(coverageId, Paths.get(this.marsClient.getTargetPath(), requestId).toString(), requestId);
-		this.rasdamanClient.query(wcsRequestUriInfo.getRequestUri().getQuery(), requestId);
+		this.rasdamanClient.query(coverageId, wcsRequestUriInfo.getRequestUri().getQuery(), requestId);
 	}
 	
 	@GET
@@ -276,7 +287,7 @@ public class IntegrationResource {
 			Runnable rasdamanIngestionAndQuery = () -> {
 				try {
 					this.rasdamanClient.ingest("", this.marsClient.getTargetPath() + "/" + marsTargetFilename, rasdamanResponseFilename);
-					this.rasdamanClient.query("", rasdamanResponseFilename);
+					this.rasdamanClient.query("", "", rasdamanResponseFilename);
 					//this.coverageRegistryRasdamanConnector.ingestAndQueryRasdaman("", this.marsClient.getTargetPath() + "/" + marsTargetFilename, query, rasdamanResponseFilename);
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
