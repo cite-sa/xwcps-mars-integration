@@ -186,6 +186,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 	}
 	
 	private String getRegistrationMetadata(Path registrationLogFilePath) throws RasdamanException {
+		logger.debug("registrationLogFilePath: " + registrationLogFilePath.toString());
 		Map<String, String> metadata = extractCoverageMetadataFromLog(registrationLogFilePath);
 		return buildRegistrationMetadata(metadata);
 	}
@@ -195,25 +196,26 @@ public class RasdamanClient implements RasdamanClientAPI {
 		
 		try (Stream<String> stream = Files.lines(registrationLogFilePath)) {
 			stream.forEach(line -> {
-				if (line.contains("http://earthserver2d.ecmwf.int:8080/rasdaman/ows?service=WCS&version=2.0.1&request=")) {
+				//if (line.contains("http://earthserver2d.ecmwf.int:8080/rasdaman/ows?service=WCS&version=2.0.1&request=")) {
+				//if (line.contains("/rasdaman/ows?service=WCS&version=2.0.1&request=")) {
+				if (line.contains(RasdamanClient.INSERT_COVERAGE)) {
 					logger.debug("Found URL line [" + line + "]");
-					
-					if (line.contains(RasdamanClient.INSERT_COVERAGE)) {
-						try {
-							String insertMetadata = getImportMetadataFromUri(RasdamanClient.INSERT_COVERAGE, line);
-							metadata.put(RasdamanClient.INSERT_COVERAGE, insertMetadata);
-						} catch (IOException e) {
-							throw new RuntimeException("Reading GML metadata file failed", e);
-						}
-					} else if (line.contains(RasdamanClient.UPDATE_COVERAGE)) {
-						try {
-							String updateMetadata = getImportMetadataFromUri(RasdamanClient.UPDATE_COVERAGE, line);
-							metadata.put(RasdamanClient.UPDATE_COVERAGE, updateMetadata);
-						} catch (IOException e) {
-							throw new RuntimeException("Reading GML metadata file failed", e);
-						}
+					try {
+						String insertMetadata = getImportMetadataFromUri(RasdamanClient.INSERT_COVERAGE, line);
+						metadata.put(RasdamanClient.INSERT_COVERAGE, insertMetadata);
+					} catch (IOException e) {
+						throw new RuntimeException("Reading GML metadata file failed", e);
+					}
+				} else if (line.contains(RasdamanClient.UPDATE_COVERAGE)) {
+					logger.debug("Found URL line [" + line + "]");
+					try {
+						String updateMetadata = getImportMetadataFromUri(RasdamanClient.UPDATE_COVERAGE, line);
+						metadata.put(RasdamanClient.UPDATE_COVERAGE, updateMetadata);
+					} catch (IOException e) {
+						throw new RuntimeException("Reading GML metadata file failed", e);
 					}
 				}
+				//}
 			});
 		} catch (IOException | RuntimeException e) {
 			throw new RasdamanException(e);

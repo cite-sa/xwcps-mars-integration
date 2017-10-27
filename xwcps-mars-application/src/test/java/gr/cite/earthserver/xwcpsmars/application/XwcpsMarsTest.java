@@ -6,7 +6,7 @@ import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
-import gr.cite.earthserver.xwcpsmars.utils.WCSRequestParameters;
+import gr.cite.earthserver.xwcpsmars.utils.WcsRequestProcessing;
 import gr.cite.femme.client.FemmeClient;
 import gr.cite.femme.client.FemmeException;
 import gr.cite.femme.client.api.FemmeClientAPI;
@@ -211,8 +211,8 @@ public class XwcpsMarsTest {
 		map.add("subset", "Long(-10,10)");
 		map.add("subset", "ansi(\"2003-04-12T18:00\")");
 
-		WCSRequestParameters wcsRequestParameters = new WCSRequestParameters(map, this.coverageRegistryRasdamanConnector.getCoverageRegistry());
-		MarsRequest marsRequest = wcsRequestParameters.buildMarsRequest();
+		WcsRequestProcessing wcsRequestProcessing = new WcsRequestProcessing(map, this.coverageRegistryRasdamanConnector.getCoverageRegistry());
+		MarsRequest marsRequest = wcsRequestProcessing.buildMarsRequest().getMarsRequest();
 		System.out.println(marsRequest);
 	}
 }

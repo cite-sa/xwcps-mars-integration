@@ -3,17 +3,17 @@ package gr.cite.earthserver.xwcpsmars.application.resources;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import gr.cite.earthserver.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.application.utils.RequestInfo;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMapping;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMappings;
-import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
-import gr.cite.earthserver.xwcpsmars.utils.WCSRequestParameters;
+import gr.cite.earthserver.xwcpsmars.utils.WcsRequestProcessing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,7 +100,7 @@ public class IntegrationResource {
 					} catch (MarsClientException e) {
 						logger.error(e.getMessage(), e);
 					}
-					ingestAndQueryRasdaman(requestId, wcsRequestProcessing.getCoverageId(), wcsRequestUriInfo, wcsRequestProcessingResult);
+					ingestAndQueryRasdaman(requestId, wcsRequestProcessing.getCoverageId(), wcsRequestUriInfo);
 				} else {
 					return Response.status(Response.Status.NOT_FOUND).build();
 				}
