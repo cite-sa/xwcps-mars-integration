@@ -88,7 +88,7 @@ public class IntegrationResource {
 			if (wcsRequestProcessing.isGetCapabilitiesRequest()) {
 				return Response.ok().entity(wcsRequestProcessing.buildGetCapabilitiesDocument()).type(MediaType.APPLICATION_XML).build();
 			} else if (wcsRequestProcessing.isDescribeCoverageRequest()) {
-				String describeCoverageResponse = this.registryClient.getMetadata(wcsRequestProcessing.getCoverageId());
+				String describeCoverageResponse = buildDescribeCoverageResponse(wcsRequestProcessing.getCoverageId());
 				return Response.ok().entity(describeCoverageResponse).type(MediaType.APPLICATION_XML).build();
 			} else {
 				WcsRequestProcessingResult wcsRequestProcessingResult = wcsRequestProcessing.buildMarsRequest();
@@ -153,7 +153,7 @@ public class IntegrationResource {
 			if (wcsRequestProcessing.isGetCapabilitiesRequest()) {
 				return Response.ok(wcsRequestProcessing.buildGetCapabilitiesDocument()).build();
 			} else if (wcsRequestProcessing.isDescribeCoverageRequest()) {
-				String describeCoverageResponse = this.registryClient.getMetadata(wcsRequestProcessing.getCoverageId());
+				String describeCoverageResponse = buildDescribeCoverageResponse(wcsRequestProcessing.getCoverageId());
 				return Response.ok().entity(describeCoverageResponse).type(MediaType.APPLICATION_XML).build();
 			} else {
 				WcsRequestProcessingResult wcsRequestProcessingResult = wcsRequestProcessing.buildMarsRequest();
@@ -177,6 +177,10 @@ public class IntegrationResource {
 				entity(wcsRequestUriInfo.getBaseUriBuilder().path(IntegrationResource.class).path("responses").path(requestId).build().toASCIIString())
 				.type(MediaType.TEXT_PLAIN)
 				.build();
+	}
+	
+	private String buildDescribeCoverageResponse(String coverageId) throws CoverageRegistryException {
+		return this.registryClient.getDescribeCoverageMetadata(coverageId);
 	}
 	
 	private void executeMarsRequest(UriInfo requestUriInfo, String requestId, String coverageId, WcsRequestProcessingResult wcsRequestProcessingResult) {

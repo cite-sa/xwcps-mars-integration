@@ -2,28 +2,20 @@ package gr.cite.earthserver.xwcpsmars.registry;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gr.cite.commons.utils.xml.XMLConverter;
-import gr.cite.commons.utils.xml.XPathEvaluator;
-import gr.cite.commons.utils.xml.exceptions.XMLConversionException;
-import gr.cite.commons.utils.xml.exceptions.XPathEvaluationException;
 import gr.cite.earthserver.xwcpsmars.mars.MarsCoverageRegistrationMetadata;
 import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 import gr.cite.earthserver.xwcpsmars.utils.CoordinatesEnvelope;
-import gr.cite.femme.client.FemmeClient;
 import gr.cite.femme.client.FemmeClientException;
 import gr.cite.femme.client.FemmeException;
 import gr.cite.femme.client.api.FemmeClientAPI;
-import gr.cite.femme.core.dto.QueryOptionsMessenger;
 import gr.cite.femme.core.model.Collection;
 import gr.cite.femme.core.model.DataElement;
 import gr.cite.femme.core.model.Metadatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Node;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
-import javax.xml.xpath.XPathFactoryConfigurationException;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -33,7 +25,7 @@ public class CoverageRegistry {
 	private static final Logger logger = LoggerFactory.getLogger(CoverageRegistry.class);
 	private static final ObjectMapper mapper = new ObjectMapper();
 	
-	private static final String COVERAGE_ID_PLACEHOLDER$ = "$$COVERAGE_ID_PLACEHOLDER$$";
+	private static final String COVERAGE_ID_PLACEHOLDER = "$$COVERAGE_ID_PLACEHOLDER$$";
 	private static final String AXIS_NAME_PLACEHOLDER = "$$AXIS_NAME_PLACEHOLDER$$";
 	
 	
@@ -137,9 +129,31 @@ public class CoverageRegistry {
 		}
 	}
 	
+	public String getDescribeCoverageMetadata(String coverageId) throws CoverageRegistryException {
+		String start = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+				"<wcs:CoverageDescriptions xsi:schemaLocation=\"http://www.opengis.net/wcs/2.0 http://schemas.opengis.net/wcs/2.0/wcsAll.xsd\" xmlns:wcs=\"http://www.opengis.net/wcs/2.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:wcscrs=\"http://www.opengis.net/wcs/service-extension/crs/1.0\" xmlns:ows=\"http://www.opengis.net/ows/2.0\" xmlns:gml=\"http://www.opengis.net/gml/3.2\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">" +
+				"<wcs:CoverageDescription gml:id=\"" + coverageId + "\" xmlns=\"http://www.opengis.net/gml/3.2\" xmlns:gmlcov=\"http://www.opengis.net/gmlcov/1.0\" xmlns:swe=\"http://www.opengis.net/swe/2.0\" xmlns:gmlrgrid=\"http://www.opengis.net/gml/3.3/rgrid\">";
+		String coverageIdElement = "<wcs:CoverageId>" + coverageId + "</wcs:CoverageId>";
+		
+		String end = "<wcs:ServiceParameters><wcs:CoverageSubtype>ReferenceableGridCoverage</wcs:CoverageSubtype><CoverageSubtypeParent xmlns=\"http://www.opengis.net/wcs/2.0\"><CoverageSubtype>AbstractDiscreteCoverage</CoverageSubtype><CoverageSubtypeParent><CoverageSubtype>AbstractCoverage</CoverageSubtype></CoverageSubtypeParent></CoverageSubtypeParent><wcs:nativeFormat>application/octet-stream</wcs:nativeFormat></wcs:ServiceParameters></wcs:CoverageDescription></wcs:CoverageDescriptions>";
+		
+		String value;
+		try {
+			value = queryCoverageRegistryByXPath("/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']".replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId));
+		} catch (FemmeException | FemmeClientException e) {
+			throw new CoverageRegistryException(e.getMessage(), e);
+		}
+		
+		logger.debug(value);
+		
+		value = value.substring(value.indexOf("<gmlcov:metadata>"), (value.indexOf("</gmlcov:rangeType>") + "</gmlcov:rangeType>".length()));
+		
+		return start + coverageIdElement + value + end;
+	}
+	
 	public MarsCoverageRegistrationMetadata retrieveMarsCoverageMetadata(String coverageId) throws CoverageRegistryException {
 		try {
-			String xPath = CoverageRegistry.COVERAGE_METADATA_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String xPath = CoverageRegistry.COVERAGE_METADATA_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
 			String metadata = queryCoverageRegistryByXPath(xPath);
 			return mapper.readValue(metadata, MarsCoverageRegistrationMetadata.class);
 		} catch (FemmeException | FemmeClientException | IOException e) {
@@ -149,9 +163,9 @@ public class CoverageRegistry {
 	
 	public AxisEnvelope retrieveAxisEnvelope(String coverageId, String axisName) throws CoverageRegistryException {
 		try {
-			String axisLabelsXPath = CoverageRegistry.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
-			String upperCornerXPath = CoverageRegistry.ENVELOPE_UPPER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
-			String lowerCornerXPath = CoverageRegistry.ENVELOPE_LOWER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String axisLabelsXPath = CoverageRegistry.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
+			String upperCornerXPath = CoverageRegistry.ENVELOPE_UPPER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
+			String lowerCornerXPath = CoverageRegistry.ENVELOPE_LOWER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
 			
 			String[] axisLabels = queryCoverageRegistryByXPath(axisLabelsXPath).split(" ");
 			String[] upperCorner = queryCoverageRegistryByXPath(upperCornerXPath).split(" ");
@@ -181,9 +195,9 @@ public class CoverageRegistry {
 	
 	public CoordinatesEnvelope retrieveCoordinatesEnvelope(String coverageId) throws CoverageRegistryException {
 		try {
-			String axisLabelsXPath = CoverageRegistry.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
-			String upperCornerXPath = CoverageRegistry.ENVELOPE_UPPER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
-			String lowerCornerXPath = CoverageRegistry.ENVELOPE_LOWER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String axisLabelsXPath = CoverageRegistry.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
+			String upperCornerXPath = CoverageRegistry.ENVELOPE_UPPER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
+			String lowerCornerXPath = CoverageRegistry.ENVELOPE_LOWER_CORNER_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
 			
 			String[] axisLabels = queryCoverageRegistryByXPath(axisLabelsXPath).split(" ");
 			String[] upperCorner = queryCoverageRegistryByXPath(upperCornerXPath).split(" ");
@@ -217,7 +231,7 @@ public class CoverageRegistry {
 	
 	public List<String> retrieveAxisCoefficients(String coverageId, String axisName) throws CoverageRegistryException {
 		try {
-			String xPath = CoverageRegistry.AXIS_COEFFICIENTS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId).replace(CoverageRegistry.AXIS_NAME_PLACEHOLDER, axisName);
+			String xPath = CoverageRegistry.AXIS_COEFFICIENTS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId).replace(CoverageRegistry.AXIS_NAME_PLACEHOLDER, axisName);
 			return Arrays.asList(queryCoverageRegistryByXPath(xPath).split(" "));
 		} catch (FemmeException | FemmeClientException e) {
 			throw new CoverageRegistryException(e);
@@ -226,10 +240,10 @@ public class CoverageRegistry {
 	
 	public String retrieveAxisOriginPoint(String coverageId, String axisName) throws CoverageRegistryException {
 		try {
-			String originPointXPath = CoverageRegistry.ORIGIN_POINT_POS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String originPointXPath = CoverageRegistry.ORIGIN_POINT_POS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
 			String originPoint = queryCoverageRegistryByXPath(originPointXPath);
 			
-			String originPointAxisLabelsXPath = CoverageRegistry.ORIGIN_POINT_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String originPointAxisLabelsXPath = CoverageRegistry.ORIGIN_POINT_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
 			String originPointAxisLabels = queryCoverageRegistryByXPath(originPointAxisLabelsXPath);
 			
 			int axisIndex = -1;
@@ -267,7 +281,7 @@ public class CoverageRegistry {
 	public List<String> retrieveAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {
 		String range;
 		try {
-			String xPath = CoverageRegistry.RANGE_PARAMETERS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER$, coverageId);
+			String xPath = CoverageRegistry.RANGE_PARAMETERS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
 			range = queryCoverageRegistryByXPath(xPath);
 		} catch (FemmeException | FemmeClientException e) {
 			throw new CoverageRegistryException(e);

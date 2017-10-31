@@ -17,6 +17,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,6 +42,9 @@ public class WcsRequestProcessing {
 	private static final String SERVICE = "service";
 	private static final String VERSION = "version";
 	private static final String REQUEST = "request";
+	private static final String COVERAGE_ID = "coverageid";
+	private static final String SUBSET = "subset";
+	private static final String QUERY = "query";
 	
 	private String service;
 	private String version;
@@ -60,12 +64,13 @@ public class WcsRequestProcessing {
 	public WcsRequestProcessing(MultivaluedMap<String, String> requestParameters, CoverageRegistry coverageRegistry) {
 		this.coverageRegistry = coverageRegistry;
 		
+		MultivaluedMap<String, String> requestParametersLowerCase = new MultivaluedHashMap<>();
 		requestParameters.forEach((name, value) -> {
+			requestParametersLowerCase.addAll(name.toLowerCase(), value);
 			logger.debug(name + " " + value);
 		});
 		
-		requestParameters.forEach((name, value) -> {
-			name = name.toLowerCase();
+		requestParametersLowerCase.forEach((name, value) -> {
 			switch (name) {
 				case WcsRequestProcessing.SERVICE:
 					this.service = value.get(0);
@@ -86,18 +91,18 @@ public class WcsRequestProcessing {
 						}
 						
 						this.getDescribeCoverageRequest = new GetDescribeCoverage();
-						this.getDescribeCoverageRequest.setCoverageId(requestParameters.get("coverageId").get(0));
-						this.getDescribeCoverageRequest.setSubsets(requestParameters.get("subset"));
+						this.getDescribeCoverageRequest.setCoverageId(requestParametersLowerCase.get(WcsRequestProcessing.COVERAGE_ID).get(0));
+						this.getDescribeCoverageRequest.setSubsets(requestParametersLowerCase.get(WcsRequestProcessing.SUBSET));
 						
 						this.coverageId = this.getDescribeCoverageRequest.getCoverageId();
 					} else if (WcsRequestProcessing.PROCESS_COVERAGES.equals(this.request)) {
 						this.isProcessCoveragesRequest = true;
 						
 						this.processCoveragesRequest = new ProcessCoverages();
-						if (requestParameters.get("query") == null) {
+						if (requestParametersLowerCase.get(WcsRequestProcessing.QUERY) == null) {
 							throw new IllegalArgumentException("No query parameter specified in ProcessCoverages request");
 						}
-						this.processCoveragesRequest.setQuery(requestParameters.get("query").get(0));
+						this.processCoveragesRequest.setQuery(requestParametersLowerCase.get(WcsRequestProcessing.QUERY).get(0));
 					} else if (WcsRequestProcessing.GET_CAPABILITIES.equals(this.request)) {
 						logger.debug("GetCapabilitiesRequest: " + this.isGetCapabilitiesRequest);
 						this.isGetCapabilitiesRequest = true;
