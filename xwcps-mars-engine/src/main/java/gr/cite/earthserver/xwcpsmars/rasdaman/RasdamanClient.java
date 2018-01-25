@@ -125,17 +125,17 @@ public class RasdamanClient implements RasdamanClientAPI {
 		Path ingredientFilePath = Paths.get(this.ingestionPath, ingestionFilename + "_ingredient.json");
 		Path logFilePath = Paths.get(this.ingestionPath, ingestionFilename + ".log");
 		
-		String ingredientContent = buildIngredientContentFromTemplate(coverageId, marsTargetFile);
+		String ingredientContent = buildIngredientContentFromTemplate(coverageId, marsTargetFile, ingestionFilename);
 		ingest(ingredientContent, ingredientFilePath, logFilePath);
 		cleanupDebugFiles(ingredientFilePath, logFilePath);
 	}
 	
-	private String buildIngredientContentFromTemplate(String coverageId, String marsTargetFile) throws RasdamanException {
+	private String buildIngredientContentFromTemplate(String coverageId, String marsTargetFile, String ingestionFilename) throws RasdamanException {
 		try {
 			String ingredientTemplateContent = Resources.toString(Resources.getResource(coverageId + this.ingredientTemplateFileNameSuffix), StandardCharsets.UTF_8);
 			
 			ingredientTemplateContent = ingredientTemplateContent.replace(RasdamanClient.RASDAMAN_BASE_URL_PLACEHOLDER, this.baseEndpoint)
-					.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, coverageId)
+					.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, generateTempCoverageId(coverageId, ingestionFilename))
 					.replace(RasdamanClient.COVERAGE_FILE_PLACEHOLDER, marsTargetFile);
 			
 			return ingredientTemplateContent;
@@ -309,6 +309,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 	public RasdamanResponse query(String coverageId, String wcsRequest, String rasdamanResponseFilename) throws RasdamanException {
 		String loggingIdMsg = "[" + rasdamanResponseFilename + "] ";
 		
+		wcsRequest = wcsRequest.replace(coverageId, generateTempCoverageId(coverageId, rasdamanResponseFilename));
 		Invocation rasdamanWcsRequest = buildWcsRequest(wcsRequest, this.webTarget);
 		//logger.info(loggingIdMsg + "WCS request [" + rasdamanWcsRequest.toString() + "]");
 		
@@ -322,9 +323,9 @@ public class RasdamanClient implements RasdamanClientAPI {
 			throw new RasdamanException(loggingIdMsg + "Rasdaman request " + wcsRequest + " failed. " + rasdamanResponse.getStatusInfo().getReasonPhrase());
 		}
 		
-		if (this.deleteIngestedCoverage) {
-			delete(coverageId);
-		}
+		//if (this.deleteIngestedCoverage) {
+		//	delete(generateTempCoverageId(coverageId, rasdamanResponseFilename));
+		//}
 		
 		return response;
 	}
@@ -370,5 +371,10 @@ public class RasdamanClient implements RasdamanClientAPI {
 		}
 		
 		return responseToStore;
+	}
+	
+	@Override
+	public String generateTempCoverageId(String coverageId, String suffix) {
+		return coverageId + "_" + suffix.replace("-", "");
 	}
 }

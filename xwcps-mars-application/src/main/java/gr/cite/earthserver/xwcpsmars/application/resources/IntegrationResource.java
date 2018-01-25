@@ -120,7 +120,7 @@ public class IntegrationResource {
 				}
 			}
 		} catch (CoverageRegistryException | RasdamanException | IOException e) {
-			logger.error(e.getMessage(), e);
+			logger.error("Error on request execution", e);
 			throw new WebApplicationException(e);
 		}
 		
@@ -214,14 +214,19 @@ public class IntegrationResource {
 			try {
 				ingestAndQueryRasdaman(requestId, coverageId, wcsRequestUriInfo);
 			} catch (RasdamanException e) {
-				throw new RuntimeException(e);
+				logger.error(e.getMessage(), e);
+				//throw new RuntimeException(e);
 			}
 		};
 	}
 	
 	private RasdamanResponse ingestAndQueryRasdaman(String requestId, String coverageId, UriInfo wcsRequestUriInfo) throws RasdamanException {
-		this.rasdamanClient.ingest(coverageId, Paths.get(this.marsClient.getTargetPath(), requestId).toString(), requestId);
-		return this.rasdamanClient.query(coverageId, wcsRequestUriInfo.getRequestUri().getQuery(), requestId);
+		try {
+			this.rasdamanClient.ingest(coverageId, Paths.get(this.marsClient.getTargetPath(), requestId).toString(), requestId);
+			return this.rasdamanClient.query(coverageId, wcsRequestUriInfo.getRequestUri().getQuery(), requestId);
+		} finally {
+			this.rasdamanClient.delete(this.rasdamanClient.generateTempCoverageId(coverageId, requestId));
+		}
 	}
 	
 	@GET
@@ -345,10 +350,7 @@ public class IntegrationResource {
 			return Response.status(Response.Status.NOT_FOUND).build();
 		}
 		
-		return Response.ok(this.uriInfo.getBaseUriBuilder()
-				.path(IntegrationResource.class).path("response").path(rasdamanResponseFilename)
-				.build().toASCIIString())
-				.build();
+		return Response.ok(this.uriInfo.getBaseUriBuilder().path(IntegrationResource.class).path("response").path(rasdamanResponseFilename).build().toASCIIString()).build();
 	}
 	
 }
