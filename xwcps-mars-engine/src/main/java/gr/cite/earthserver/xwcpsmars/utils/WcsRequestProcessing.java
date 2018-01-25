@@ -257,6 +257,9 @@ public class WcsRequestProcessing {
 			String axisLabel = labelAndRange.getLeft();
 			List<String> subsetRange = labelAndRange.getRight();
 			
+			logger.debug("AxisLabel: " + axisLabel);
+			logger.debug(subsetRange.stream().collect(Collectors.joining(", ")));
+			
 			if (axisLabel.equals(WcsRequestProcessing.LATITUDE_AXIS)) {
 				subsetRange.forEach(coordinatesAggregator::addLatitude);
 			} else if (axisLabel.equals(WcsRequestProcessing.LONGITUDE_AXIS)) {

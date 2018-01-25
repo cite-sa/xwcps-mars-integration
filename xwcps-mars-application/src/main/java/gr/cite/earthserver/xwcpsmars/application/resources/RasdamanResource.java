@@ -3,6 +3,7 @@ package gr.cite.earthserver.xwcpsmars.application.resources;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,8 +45,8 @@ public class RasdamanResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response query(@PathParam("requestId") String requestId, @QueryParam("coverageId") String coverageId, @Context UriInfo wcsRequest) {
 		try {
-			String response = this.rasdamanClient.query(coverageId, wcsRequest.getRequestUri().getQuery(), requestId);
-			return Response.ok().entity(response).type(MediaType.APPLICATION_XML).build();
+			RasdamanResponse response = this.rasdamanClient.query(coverageId, wcsRequest.getRequestUri().getQuery(), requestId);
+			return Response.ok().entity(response.getEntity()).header("Content-Type", response.getContentType()).build();
 		} catch (RasdamanException e) {
 			throw new WebApplicationException(e.getMessage(), e);
 		}

@@ -248,5 +248,10 @@ public class AxisUtils {
 			}
 		}
 	}
+	
+	public static void main(String[] args) {
+		boolean valid = AxisUtils.DateTimeTransformation.isValidDateTime("\"1979-01-01T00:00:00+00:00\"");
+		System.out.println(valid);
+	}
 
 }

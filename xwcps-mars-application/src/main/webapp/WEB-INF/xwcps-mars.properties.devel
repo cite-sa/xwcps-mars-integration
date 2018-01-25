@@ -1,6 +1,8 @@
 gr.cite.earthserver.xwcpsmars.debug=true
 gr.cite.earthserver.xwcpsmars.debug.deleteIngestedCoverage=false
 
+gr.cite.earthserver.xwcpsmars.application.hostname=http\://earthserver-test.ecmwf.int/rasdaman-mars
+
 gr.cite.earthserver.xwcpsmars.mars.client.script.command=python /home/kapostolopoulos/Desktop/xwcps-mars/mars/mars_retrieve.py
 gr.cite.earthserver.xwcpsmars.mars.target.path=/home/kapostolopoulos/Desktop/xwcps-mars/mars/responses
 

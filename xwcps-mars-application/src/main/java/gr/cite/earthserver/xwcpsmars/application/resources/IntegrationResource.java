@@ -11,19 +11,25 @@ import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMapping;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMappings;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanResponse;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
 import gr.cite.earthserver.xwcpsmars.utils.WcsRequestProcessing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -35,7 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
-//@Component
+@Component
 @Path("integration")
 @Produces(MediaType.APPLICATION_JSON)
 public class IntegrationResource {
@@ -47,12 +53,15 @@ public class IntegrationResource {
 	
 	@Context
 	private UriInfo uriInfo;
+	
+	private String applicationHostname;
 	private MarsClientAPI marsClient;
 	private RasdamanClientAPI rasdamanClient;
 	private CoverageRegistry registryClient;
 	
 	@Inject
-	public IntegrationResource(MarsClientAPI marsClient, RasdamanClientAPI rasdamanClient, CoverageRegistry registryClient) {
+	public IntegrationResource(String applicationHostname, MarsClientAPI marsClient, RasdamanClientAPI rasdamanClient, CoverageRegistry registryClient) {
+		this.applicationHostname = applicationHostname;
 		this.marsClient = marsClient;
 		this.rasdamanClient = rasdamanClient;
 		this.registryClient = registryClient;
@@ -68,7 +77,7 @@ public class IntegrationResource {
 	
 	@GET
 	@Path("requests")
-	@Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_XML})
+	//@Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_XML})
 	public Response request(@Context UriInfo wcsRequestUriInfo) {
 		try {
 			this.registryClient.registerMarsCollection();
@@ -78,6 +87,7 @@ public class IntegrationResource {
 		}
 		
 		String requestId = UUID.randomUUID().toString();
+		RasdamanResponse rasdamanResponse;
 		
 		try {
 			long translationStart = System.currentTimeMillis();
@@ -104,7 +114,7 @@ public class IntegrationResource {
 					} catch (MarsClientException e) {
 						logger.error(e.getMessage(), e);
 					}
-					ingestAndQueryRasdaman(requestId, wcsRequestProcessing.getCoverageId(), wcsRequestUriInfo);
+					rasdamanResponse = ingestAndQueryRasdaman(requestId, wcsRequestProcessing.getCoverageId(), wcsRequestUriInfo);
 				} else {
 					return Response.status(Response.Status.NOT_FOUND).build();
 				}
@@ -114,12 +124,12 @@ public class IntegrationResource {
 			throw new WebApplicationException(e);
 		}
 		
-		String rasdamanResponse;
-		try (Stream<String> fileContents = Files.lines(Paths.get(this.rasdamanClient.getResponsePath(), requestId), StandardCharsets.UTF_8)) {
-			rasdamanResponse = fileContents.collect(Collectors.joining(""));
-		} catch (IOException e) {
-			throw new WebApplicationException(e);
-		}
+		
+		//try (Stream<String> fileContents = Files.lines(Paths.get(this.rasdamanClient.getResponsePath(), requestId), StandardCharsets.UTF_8)) {
+		//	rasdamanResponse = fileContents.collect(Collectors.joining(""));
+		//} catch (IOException e) {
+		//	throw new WebApplicationException(e);
+		//}
 		
 		try {
 			this.marsClient.cleanupDebugFiles(requestId);
@@ -127,7 +137,8 @@ public class IntegrationResource {
 			throw new WebApplicationException(e);
 		}
 		
-		return Response.ok().entity(rasdamanResponse).type(MediaType.TEXT_PLAIN).build();
+		return Response.ok().entity(rasdamanResponse.getEntity()).header("Content-Type", rasdamanResponse.getContentType()).build();
+		//return Response.ok().entity(rasdamanResponse).type(MediaType.TEXT_PLAIN).build();
 		//return Response.ok().entity(rasdamanResponse).type(MediaType.APPLICATION_XML).build();
 	}
 	
@@ -173,8 +184,10 @@ public class IntegrationResource {
 			throw new WebApplicationException(e);
 		}
 		
-		return Response.ok().
-				entity(wcsRequestUriInfo.getBaseUriBuilder().path(IntegrationResource.class).path("responses").path(requestId).build().toASCIIString())
+		System.out.println(this.applicationHostname);
+		
+		return Response.ok()
+				.entity(UriBuilder.fromPath(this.applicationHostname).path(IntegrationResource.class).path("responses").path(requestId).build().toASCIIString())
 				.type(MediaType.TEXT_PLAIN)
 				.build();
 	}
@@ -206,9 +219,9 @@ public class IntegrationResource {
 		};
 	}
 	
-	private void ingestAndQueryRasdaman(String requestId, String coverageId, UriInfo wcsRequestUriInfo) throws RasdamanException {
+	private RasdamanResponse ingestAndQueryRasdaman(String requestId, String coverageId, UriInfo wcsRequestUriInfo) throws RasdamanException {
 		this.rasdamanClient.ingest(coverageId, Paths.get(this.marsClient.getTargetPath(), requestId).toString(), requestId);
-		this.rasdamanClient.query(coverageId, wcsRequestUriInfo.getRequestUri().getQuery(), requestId);
+		return this.rasdamanClient.query(coverageId, wcsRequestUriInfo.getRequestUri().getQuery(), requestId);
 	}
 	
 	@GET
@@ -226,10 +239,30 @@ public class IntegrationResource {
 	@Path("responses/{requestId}")
 	@Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_XML})
 	public Response getResponse(@PathParam("requestId") String requestId) {
-		String rasdamanResponse;
+		RasdamanResponse rasdamanResponse;
 		
-		//try (Stream<String> fileContents = Files.lines(Paths.get(this.coverageRegistryRasdamanConnector.getRasdamanResponsePath(), requestId), StandardCharsets.UTF_8)) {
-		try (Stream<String> fileContents = Files.lines(Paths.get(this.rasdamanClient.getResponsePath(), requestId), StandardCharsets.UTF_8)) {
+		if (!Files.exists(Paths.get(this.rasdamanClient.getResponsePath(), requestId))) {
+			return Response.status(Response.Status.NOT_FOUND).entity("Rasdaman response not available yet. Please retry later").type(MediaType.TEXT_PLAIN).build();
+		}
+		
+		try {
+			FileInputStream fileInput = new FileInputStream(new File(this.rasdamanClient.getResponsePath() + "/" + requestId));
+			ObjectInputStream objectInput = new ObjectInputStream(fileInput);
+			
+			rasdamanResponse = (RasdamanResponse) objectInput.readObject();
+			
+			objectInput.close();
+			fileInput.close();
+		} catch (IOException | ClassNotFoundException e) {
+			logger.error(e.getMessage(), e);
+			throw new WebApplicationException("Error on reading Rasdaman response", e);
+		}
+		
+		return Response.ok().entity(rasdamanResponse.getEntity()).header("Content-Type", rasdamanResponse.getContentType()).build();
+		//return Response.ok().entity(rasdamanResponse).type(MediaType.APPLICATION_XML).build();
+		
+		
+		/*try (Stream<String> fileContents = Files.lines(Paths.get(this.rasdamanClient.getResponsePath(), requestId), StandardCharsets.UTF_8)) {
 			rasdamanResponse = fileContents.collect(Collectors.joining(""));
 		} catch (NoSuchFileException e) {
 			return Response.status(Response.Status.NOT_FOUND)
@@ -240,7 +273,7 @@ public class IntegrationResource {
 			throw new WebApplicationException(e);
 		}
 		
-		return Response.ok().entity(rasdamanResponse).type(MediaType.APPLICATION_XML).build();
+		return Response.ok().entity(rasdamanResponse).type(MediaType.APPLICATION_XML).build();*/
 	}
 	
 	@DELETE

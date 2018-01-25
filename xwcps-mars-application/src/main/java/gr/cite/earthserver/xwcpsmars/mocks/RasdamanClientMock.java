@@ -13,6 +13,7 @@ import gr.cite.earthserver.wcs.core.WCSResponse;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanResponse;
 import org.glassfish.jersey.uri.UriComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +67,8 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 	private WCSRequestBuilder wcsRequestBuilder;
 
 	@Inject
-	public RasdamanClientMock(String endpoint, String scriptCommand, String ingredientTemplateFileNameSuffix, String registrationPath, String ingestionPath, String responsePath, boolean debug) throws IOException {
+	public RasdamanClientMock(String baseEndpoint, String endpoint, String scriptCommand, String ingredientTemplateFileNameSuffix,
+							  String registrationPath, String ingestionPath, String responsePath, boolean debug, boolean deleteIngestedCoverage) throws IOException {
 		this.endpoint = endpoint;
 		this.scriptCommand = scriptCommand;
 		this.ingredientTemplateFileNameSuffix = ingredientTemplateFileNameSuffix;
@@ -201,13 +203,14 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 			this.wcsRequestBuilder.deleteCoverage().coverageId(coverageId).build();
 	}
 
-	public String query(String coverageId, String wcpsQuery, String rasdamanResponseFilename) throws RasdamanException {
+	public RasdamanResponse query(String coverageId, String wcpsQuery, String rasdamanResponseFilename) throws RasdamanException {
 		logger.info("Querying rasdaman [" + this.endpoint + "?" + wcpsQuery + "]");
 
-		String rasdamanResponse = "WCPS: " + wcpsQuery + ", rasdaman response file: " + rasdamanResponseFilename;
+		//String rasdamanResponse = "WCPS: " + wcpsQuery + ", rasdaman response file: " + rasdamanResponseFilename;
+		RasdamanResponse rasdamanResponse = new RasdamanResponse();
 		logger.info("Writing response to " + rasdamanResponseFilename);
 		try {
-			Files.write(Paths.get(this.responsePath + "/" + rasdamanResponseFilename), rasdamanResponse.getBytes());
+			Files.write(Paths.get(this.responsePath + "/" + rasdamanResponseFilename), rasdamanResponse.getEntity());
 		} catch (IOException e) {
 			throw new RasdamanException("Write rasdaman response to " + rasdamanResponseFilename + " failed", e);
 		}

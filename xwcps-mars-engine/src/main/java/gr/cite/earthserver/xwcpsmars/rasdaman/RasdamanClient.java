@@ -1,5 +1,8 @@
 package gr.cite.earthserver.xwcpsmars.rasdaman;
 
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteSource;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Resources;
 import gr.cite.commons.utils.xml.XMLConverter;
 import gr.cite.commons.utils.xml.XPathEvaluator;
@@ -18,7 +21,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.xml.xpath.XPathFactoryConfigurationException;
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -209,8 +212,6 @@ public class RasdamanClient implements RasdamanClientAPI {
 		
 		try (Stream<String> stream = Files.lines(registrationLogFilePath)) {
 			stream.forEach(line -> {
-				//if (line.contains("http://earthserver2d.ecmwf.int:8080/rasdaman/ows?service=WCS&version=2.0.1&request=")) {
-				//if (line.contains("/rasdaman/ows?service=WCS&version=2.0.1&request=")) {
 				if (line.contains(RasdamanClient.INSERT_COVERAGE)) {
 					logger.debug("Found URL line [" + line + "]");
 					try {
@@ -261,7 +262,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 			logger.debug(value);
 		});
 		String gmlcovMetadata = extractGmlcovMetadataFromInsertCoverageMetadata(metadata.get(RasdamanClient.INSERT_COVERAGE));
-		return integrateInsertAndUpdateCoverageMetadata(metadata.get(RasdamanClient.UPDATE_COVERAGE), gmlcovMetadata);
+		return mergeInsertAndUpdateCoverageMetadata(metadata.get(RasdamanClient.UPDATE_COVERAGE), gmlcovMetadata);
 	}
 	
 	private String extractGmlcovMetadataFromInsertCoverageMetadata(String insertCoverageMetadata) throws RasdamanException {
@@ -278,7 +279,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 		}
 	}
 	
-	private String integrateInsertAndUpdateCoverageMetadata(String updateCoverageMetadata, String gmlcovMetadata) {
+	private String mergeInsertAndUpdateCoverageMetadata(String updateCoverageMetadata, String gmlcovMetadata) {
 		int start = updateCoverageMetadata.indexOf(RasdamanClient.GMLCOV_METADATA_OPENING_TAG) + RasdamanClient.GMLCOV_METADATA_OPENING_TAG.length();
 		int end = updateCoverageMetadata.indexOf(RasdamanClient.GMLCOV_METADATA_CLOSING_TAG);
 		
@@ -301,22 +302,22 @@ public class RasdamanClient implements RasdamanClientAPI {
 		long startTime = System.currentTimeMillis();
 		this.wcsRequestBuilder.deleteCoverage().coverageId(coverageId).build();
 		long endTime = System.currentTimeMillis();
-		logger.info("Delete coverage " + coverageId + " execution time [" + (endTime - startTime) + "]");
+		logger.info("Delete coverage " + coverageId + " execution time [" + (endTime - startTime) + " ms]");
 	}
 	
 	@Override
-	public String query(String coverageId, String wcsRequest, String rasdamanResponseFilename) throws RasdamanException {
+	public RasdamanResponse query(String coverageId, String wcsRequest, String rasdamanResponseFilename) throws RasdamanException {
 		String loggingIdMsg = "[" + rasdamanResponseFilename + "] ";
 		
 		Invocation rasdamanWcsRequest = buildWcsRequest(wcsRequest, this.webTarget);
-		logger.info(loggingIdMsg + "WCS request [" + rasdamanWcsRequest.toString() + "]");
+		//logger.info(loggingIdMsg + "WCS request [" + rasdamanWcsRequest.toString() + "]");
 		
 		long queryStart = System.currentTimeMillis();
 		Response rasdamanResponse = rasdamanWcsRequest.invoke();
 		long queryEnd = System.currentTimeMillis();
 		logger.info(loggingIdMsg + "WCS request execution time [" + (queryEnd - queryStart) + " ms]");
 		
-		String response = readAndStoreRasdamanResponse(rasdamanResponse, rasdamanResponseFilename);
+		RasdamanResponse response = readAndStoreRasdamanResponse(rasdamanResponse, rasdamanResponseFilename);
 		if (rasdamanResponse.getStatus() != 200) {
 			throw new RasdamanException(loggingIdMsg + "Rasdaman request " + wcsRequest + " failed. " + rasdamanResponse.getStatusInfo().getReasonPhrase());
 		}
@@ -330,6 +331,8 @@ public class RasdamanClient implements RasdamanClientAPI {
 	
 	private Invocation buildWcsRequest(String wcsRequest, WebTarget rasdamanWebTarget) {
 		WebTarget tempRasdamanWebTarget = rasdamanWebTarget;
+		wcsRequest = wcsRequest.startsWith("&") ? wcsRequest.substring(1, wcsRequest.length()) : wcsRequest;
+		
 		for (String queryParam : wcsRequest.split("&")) {
 			String[] param = queryParam.split("=");
 			tempRasdamanWebTarget = tempRasdamanWebTarget.queryParam(param[0], UriComponent.encode(param[1], UriComponent.Type.QUERY_PARAM_SPACE_ENCODED));
@@ -337,14 +340,35 @@ public class RasdamanClient implements RasdamanClientAPI {
 		return tempRasdamanWebTarget.request(MediaType.APPLICATION_XML).buildGet();
 	}
 	
-	private String readAndStoreRasdamanResponse(Response rasdamanResponse, String rasdamanResponseFilename) throws RasdamanException {
-		String response = rasdamanResponse.readEntity(String.class);
+	private RasdamanResponse readAndStoreRasdamanResponse(Response rasdamanResponse, String rasdamanResponseFilename) throws RasdamanException {
+		/*String entity = rasdamanResponse.readEntity(String.class);
 		try {
-			Files.write(Paths.get(this.responsePath, rasdamanResponseFilename), Collections.singletonList(response));
+			Files.write(Paths.get(this.responsePath, rasdamanResponseFilename), Collections.singletonList(entity));
 		} catch (IOException e) {
 			throw new RasdamanException("[" + rasdamanResponseFilename + "] WCS request response storing in " + rasdamanResponseFilename + " failed", e);
 		}
-		return response;
+		return entity;*/
+		
+		RasdamanResponse responseToStore = new RasdamanResponse();
+		try {
+			byte[] bytes = ByteStreams.toByteArray(rasdamanResponse.readEntity(InputStream.class));
+			
+			responseToStore.setContentType(rasdamanResponse.getHeaderString("Content-Type"));
+			responseToStore.setEntity(bytes);
+		
+			File responseFile = Files.createFile(Paths.get(this.responsePath, rasdamanResponseFilename)).toFile();
+			FileOutputStream fileOutput = new FileOutputStream(responseFile);
+			ObjectOutputStream objectOutput = new ObjectOutputStream(fileOutput);
+			
+			objectOutput.writeObject(responseToStore);
+			
+			objectOutput.close();
+			fileOutput .close();
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+			throw new RasdamanException("Error on storing rasdaman response in file [" + rasdamanResponseFilename +"]");
+		}
+		
+		return responseToStore;
 	}
-	
 }

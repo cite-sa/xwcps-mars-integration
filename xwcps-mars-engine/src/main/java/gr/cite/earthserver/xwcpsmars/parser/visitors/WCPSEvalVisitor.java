@@ -1,5 +1,6 @@
 package gr.cite.earthserver.xwcpsmars.parser.visitors;
 
+import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser.*;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
@@ -25,6 +26,7 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
     private MarsRequestBuilder marsRequestBuilder;
 
     private String coverageId;
+    private String formatName;
     private AxisUtils.CoordinatesAggregator coordinatesAggregator;
     private AxisUtils.DateTimeTransformation dateTimeTransformation;
     private AxisUtils.AxisRangeAggregator axisRangeAggregator;
@@ -42,6 +44,10 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
     public String getCoverageId() {
         return this.coverageId;
     }
+    
+	public String getFormatName() {
+		return this.formatName;
+	}
 
     @Override public MarsRequestBuilder visitSpecificIdLabel(SpecificIdLabelContext ctx) {
         this.coverageId = ctx.COVERAGE_VARIABLE_NAME().getText();
@@ -170,8 +176,13 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
             marsRequestBuilder.time(dateTimeTransformation.buildMarsTime());
         }
     }
-
-
+    
+    @Override
+    public MarsRequestBuilder visitFormat_name(Format_nameContext ctx) {
+    	this.formatName = ctx.getText();
+		return visitChildren(ctx);
+    }
+    
     /*@Override
     public MarsRequest visitXwcps(XwcpsContext ctx) {
         return visitChildren(ctx);
