@@ -261,16 +261,21 @@ public class MarsRequest {
 			return this;
 		}
 
-		public MarsRequest build() {
+		public MarsRequest build(MarsParameters marsParameters) {
 			if ("analysis".equals(this.marsRequest.getType()) || "an".equals(this.marsRequest.getType())) {
 				marsRequest.setStep("00");
 			}
 
-			if (this.coverageId.contains("mdfa")) {
+			/*if (this.coverageId.contains("mdfa")) {
 				this.marsRequest.setStream("mdfa");
 			} else if (this.coverageId.contains("moda")) {
 				this.marsRequest.setStream("moda");
-			}
+			}*/
+			
+			this.marsRequest.setType(marsParameters.getType());
+			this.marsRequest.setParam(marsParameters.getParam());
+			this.marsRequest.setLevtype(marsParameters.getLevtype());
+			this.marsRequest.setStream(marsParameters.getStream());
 
 			return this.marsRequest;
 		}

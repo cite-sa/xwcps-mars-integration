@@ -1,3 +1,4 @@
+/*
 package gr.cite.earthserver.xwcpsmars.rasdaman;
 
 import gr.cite.earthserver.xwcpsmars.mars.MarsCoverageRegistrationMetadata;
@@ -63,3 +64,4 @@ public class CoverageRegistryRasdamanConnector {
 	}
 
 }
+*/

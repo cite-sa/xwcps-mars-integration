@@ -216,7 +216,12 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 		}
 		return rasdamanResponse;
 	}
-
+	
+	@Override
+	public String generateTempCoverageId(String coverageId, String suffix) {
+		return null;
+	}
+	
 	private String getRegistrationMetadata(String rasdamanRegistrationLogFile) throws RasdamanException {
 		//this.rasdamanRegistrationPath = "/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/registration";
 

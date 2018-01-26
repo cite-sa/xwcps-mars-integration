@@ -245,7 +245,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 		logger.debug(importOperation + " file [" + coverageMetadataPath + "]");
 		
 		String importMetadata = Files.lines(coverageMetadataPath).collect(Collectors.joining());
-		logger.debug(importOperation + " [" + importMetadata + "]");
+		//logger.debug(importOperation + " [" + importMetadata + "]");
 		
 		return importMetadata;
 	}

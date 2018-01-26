@@ -3,7 +3,8 @@ package gr.cite.earthserver.xwcpsmars.utils;
 import gr.cite.earthserver.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSLexer;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser;
-import gr.cite.earthserver.xwcpsmars.mars.MarsCoverageRegistrationMetadata;
+import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
+import gr.cite.earthserver.xwcpsmars.mars.MarsParametersMapping;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest.MarsRequestBuilder;
 import gr.cite.earthserver.xwcpsmars.parser.visitors.XWCPSEvalVisitor;
@@ -60,9 +61,11 @@ public class WcsRequestProcessing {
 	private boolean isProcessCoveragesRequest = false;
 	
 	private CoverageRegistry coverageRegistry;
+	private  MarsParametersMapping marsParametersMapping;
 	
-	public WcsRequestProcessing(MultivaluedMap<String, String> requestParameters, CoverageRegistry coverageRegistry) {
+	public WcsRequestProcessing(MultivaluedMap<String, String> requestParameters, CoverageRegistry coverageRegistry, MarsParametersMapping marsParametersMapping) {
 		this.coverageRegistry = coverageRegistry;
+		this.marsParametersMapping = marsParametersMapping;
 		
 		MultivaluedMap<String, String> requestParametersLowerCase = new MultivaluedHashMap<>();
 		requestParameters.forEach((name, value) -> {
@@ -165,8 +168,8 @@ public class WcsRequestProcessing {
 			// generateIngestionParameters(subsets, wcsRequestProcessingResult);
 		}
 		
-		finalizeMarsRequest(marsRequestBuilder);
-		wcsRequestProcessingResult.setMarsRequest(marsRequestBuilder.build());
+		MarsRequest finalRequest = finalizeMarsRequest(marsRequestBuilder);
+		wcsRequestProcessingResult.setMarsRequest(finalRequest);
 		
 		return wcsRequestProcessingResult;
 	}
@@ -319,17 +322,20 @@ public class WcsRequestProcessing {
 		return coefficients.stream().map(Integer::parseInt).map(coefficient -> origin + coefficient).collect(Collectors.toList());
 	}
 	
-	private void retrieveAndSetMarsParametersFromRegistry(String coverageId, MarsRequestBuilder marsRequestBuilder) throws CoverageRegistryException {
-		MarsCoverageRegistrationMetadata marsCoverageRegistrationMetadata = this.coverageRegistry.retrieveMarsCoverageMetadata(coverageId);
-		marsRequestBuilder.type(marsCoverageRegistrationMetadata.getType());
-		marsRequestBuilder.param(marsCoverageRegistrationMetadata.getParam());
-		marsRequestBuilder.levtype(marsCoverageRegistrationMetadata.getLevtype());
-	}
+	/*private void retrieveAndSetMarsParametersFromRegistry(String coverageId, MarsRequestBuilder marsRequestBuilder) throws CoverageRegistryException {
+		Map<String, String> marsCoverageRegistrationMetadata = this.coverageRegistry.retrieveMarsCoverageMetadata(coverageId);
+		MarsParameters marsParameters = new MarsParameters(this.marsParametersMapping, marsCoverageRegistrationMetadata);
+		marsRequestBuilder.type(marsParameters.getType());
+		marsRequestBuilder.param(marsParameters.getParam());
+		marsRequestBuilder.levtype(marsParameters.getLevtype());
+	}*/
 	
-	private void finalizeMarsRequest(MarsRequestBuilder marsRequestBuilder) throws CoverageRegistryException {
-		retrieveAndSetMarsParametersFromRegistry(coverageId, marsRequestBuilder);
+	private MarsRequest finalizeMarsRequest(MarsRequestBuilder marsRequestBuilder) throws CoverageRegistryException {
+		//retrieveAndSetMarsParametersFromRegistry(coverageId, marsRequestBuilder);
+		Map<String, Object> marsCoverageRegistrationMetadata = this.coverageRegistry.retrieveMarsCoverageMetadata(coverageId);
+		MarsParameters marsParameters = new MarsParameters(this.marsParametersMapping, marsCoverageRegistrationMetadata);
 		
-		MarsRequest marsRequest = marsRequestBuilder.build();
+		MarsRequest marsRequest = marsRequestBuilder.build(marsParameters);
 		if (marsRequest.getDate() == null || marsRequest.getDate().trim().isEmpty()) {
 			logger.debug("MARS request date is empty");
 			
@@ -349,6 +355,8 @@ public class WcsRequestProcessing {
 			CoordinatesEnvelope envelope = this.coverageRegistry.retrieveCoordinatesEnvelope(this.coverageId);
 			marsRequest.setArea(envelope.getMaxLat() + "/" + envelope.getMinLong() + "/" + envelope.getMinLat() + "/" + envelope.getMaxLong());
 		}
+		
+		return marsRequest;
 	}
 	
 	private class GetCapabilities { }
@@ -388,10 +396,6 @@ public class WcsRequestProcessing {
 		public void setQuery(String query) {
 			this.query = query;
 		}
-	}
-	
-	public static void main(String[] args) {
-	
 	}
 	
 }

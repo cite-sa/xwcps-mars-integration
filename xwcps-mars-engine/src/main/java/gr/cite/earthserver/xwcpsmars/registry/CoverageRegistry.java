@@ -1,8 +1,9 @@
 package gr.cite.earthserver.xwcpsmars.registry;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gr.cite.earthserver.xwcpsmars.mars.MarsCoverageRegistrationMetadata;
+//import gr.cite.earthserver.xwcpsmars.mars.MarsCoverageRegistrationMetadata;
 import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 import gr.cite.earthserver.xwcpsmars.utils.CoordinatesEnvelope;
 import gr.cite.femme.client.FemmeClientException;
@@ -151,11 +152,11 @@ public class CoverageRegistry {
 		return start + coverageIdElement + value + end;
 	}
 	
-	public MarsCoverageRegistrationMetadata retrieveMarsCoverageMetadata(String coverageId) throws CoverageRegistryException {
+	public Map<String, Object> retrieveMarsCoverageMetadata(String coverageId) throws CoverageRegistryException {
 		try {
 			String xPath = CoverageRegistry.COVERAGE_METADATA_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
 			String metadata = queryCoverageRegistryByXPath(xPath);
-			return mapper.readValue(metadata, MarsCoverageRegistrationMetadata.class);
+			return mapper.readValue(metadata, new TypeReference<Map<String, Object>>() {});
 		} catch (FemmeException | FemmeClientException | IOException e) {
 			throw new CoverageRegistryException(e);
 		}

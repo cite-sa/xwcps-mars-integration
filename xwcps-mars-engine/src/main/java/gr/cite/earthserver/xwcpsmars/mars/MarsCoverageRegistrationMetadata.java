@@ -1,3 +1,4 @@
+/*
 package gr.cite.earthserver.xwcpsmars.mars;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -96,3 +97,4 @@ public class MarsCoverageRegistrationMetadata {
 		this.stream = stream;
 	}
 }
+*/

@@ -7,6 +7,7 @@ import gr.cite.earthserver.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.application.utils.RequestInfo;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
+import gr.cite.earthserver.xwcpsmars.mars.MarsParametersMapping;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMapping;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMappings;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
@@ -58,13 +59,15 @@ public class IntegrationResource {
 	private MarsClientAPI marsClient;
 	private RasdamanClientAPI rasdamanClient;
 	private CoverageRegistry registryClient;
+	private MarsParametersMapping marsParametersMapping;
 	
 	@Inject
-	public IntegrationResource(String applicationHostname, MarsClientAPI marsClient, RasdamanClientAPI rasdamanClient, CoverageRegistry registryClient) {
+	public IntegrationResource(String applicationHostname, MarsClientAPI marsClient, RasdamanClientAPI rasdamanClient, CoverageRegistry registryClient) throws IOException {
 		this.applicationHostname = applicationHostname;
 		this.marsClient = marsClient;
 		this.rasdamanClient = rasdamanClient;
 		this.registryClient = registryClient;
+		this.marsParametersMapping = mapper.readValue(Resources.toString(Resources.getResource("mars-parameters-mapping.json"), StandardCharsets.UTF_8), MarsParametersMapping.class);
 	}
 	
 	@GET
@@ -92,7 +95,7 @@ public class IntegrationResource {
 		try {
 			long translationStart = System.currentTimeMillis();
 			
-			WcsRequestProcessing wcsRequestProcessing = new WcsRequestProcessing(wcsRequestUriInfo.getQueryParameters(), this.registryClient);
+			WcsRequestProcessing wcsRequestProcessing = new WcsRequestProcessing(wcsRequestUriInfo.getQueryParameters(), this.registryClient, this.marsParametersMapping);
 			
 			logger.debug("Is it GetCapabilities? -> " + wcsRequestProcessing.isGetCapabilitiesRequest());
 			if (wcsRequestProcessing.isGetCapabilitiesRequest()) {
@@ -144,7 +147,7 @@ public class IntegrationResource {
 	
 	@GET
 	@Path("requests/async")
-	@Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_XML})
+	@Produces({MediaType.TEXT_PLAIN})
 	public Response requestAsync(@Context UriInfo wcsRequestUriInfo) {
 		try {
 			this.registryClient.registerMarsCollection();
@@ -159,7 +162,7 @@ public class IntegrationResource {
 		try {
 			long translationStart = System.currentTimeMillis();
 			
-			WcsRequestProcessing wcsRequestProcessing = new WcsRequestProcessing(wcsRequestUriInfo.getQueryParameters(), this.registryClient);
+			WcsRequestProcessing wcsRequestProcessing = new WcsRequestProcessing(wcsRequestUriInfo.getQueryParameters(), this.registryClient, this.marsParametersMapping);
 			
 			if (wcsRequestProcessing.isGetCapabilitiesRequest()) {
 				return Response.ok(wcsRequestProcessing.buildGetCapabilitiesDocument()).build();
@@ -184,12 +187,9 @@ public class IntegrationResource {
 			throw new WebApplicationException(e);
 		}
 		
-		System.out.println(this.applicationHostname);
-		
 		return Response.ok()
 				.entity(UriBuilder.fromPath(this.applicationHostname).path(IntegrationResource.class).path("responses").path(requestId).build().toASCIIString())
-				.type(MediaType.TEXT_PLAIN)
-				.build();
+				.type(MediaType.TEXT_PLAIN).build();
 	}
 	
 	private String buildDescribeCoverageResponse(String coverageId) throws CoverageRegistryException {
