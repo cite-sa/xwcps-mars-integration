@@ -41,8 +41,7 @@ public class XwcpsErrorListener implements ANTLRErrorListener {
 	}
 
 	@Override
-	public void reportContextSensitivity(Parser recognizer, DFA dfa, int startIndex, int stopIndex, int prediction,
-										 ATNConfigSet configs) {
+	public void reportContextSensitivity(Parser recognizer, DFA dfa, int startIndex, int stopIndex, int prediction, ATNConfigSet configs) {
 
 	}
 }

@@ -11,6 +11,10 @@ public class MarsParameters {
 		this.metadata = metadata;
 	}
 	
+	public Map<String, Object> getMetadata() {
+		return metadata;
+	}
+	
 	public String getLevtype() {
 		return (String) this.metadata.get(this.marsParametersMapping.getLevtype());
 	}
@@ -25,6 +29,14 @@ public class MarsParameters {
 	
 	public String getStream() {
 		return (String) this.metadata.get(this.marsParametersMapping.getStream());
+	}
+	
+	public String getGribParameterName() {
+		return (String) this.metadata.get(this.marsParametersMapping.getGribParameterName());
+	}
+	
+	public String getShortName() {
+		return (String) this.metadata.get(this.marsParametersMapping.getShortName());
 	}
 	
 }

@@ -7,6 +7,7 @@ import gr.cite.earthserver.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.application.utils.RequestInfo;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
+import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParametersMapping;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMapping;
 import gr.cite.earthserver.xwcpsmars.mars.XwcpsMarsMappings;
@@ -117,7 +118,7 @@ public class IntegrationResource {
 					} catch (MarsClientException e) {
 						logger.error(e.getMessage(), e);
 					}
-					rasdamanResponse = ingestAndQueryRasdaman(requestId, wcsRequestProcessing.getCoverageId(), wcsRequestUriInfo);
+					rasdamanResponse = ingestAndQueryRasdaman(requestId, wcsRequestProcessing.getCoverageId(), wcsRequestProcessingResult.getMarsParameters(), wcsRequestUriInfo);
 				} else {
 					return Response.status(Response.Status.NOT_FOUND).build();
 				}
@@ -198,7 +199,8 @@ public class IntegrationResource {
 	
 	private void executeMarsRequest(UriInfo requestUriInfo, String requestId, String coverageId, WcsRequestProcessingResult wcsRequestProcessingResult) {
 		try {
-			this.marsClient.retrieve(requestId, wcsRequestProcessingResult.getMarsRequest(), ingestAndQueryRasdamanCallback(requestId, coverageId, requestUriInfo));
+			this.marsClient.retrieve(requestId, wcsRequestProcessingResult.getMarsRequest(),
+					ingestAndQueryRasdamanCallback(requestId, coverageId, wcsRequestProcessingResult.getMarsParameters(), requestUriInfo));
 		} catch (MarsClientException e) {
 			this.requests.get(requestId).setStatus(RequestInfo.RequestStatus.ERROR);
 			logger.error(e.getMessage(), e);
@@ -209,24 +211,25 @@ public class IntegrationResource {
 		
 	}
 	
-	private Runnable ingestAndQueryRasdamanCallback(String requestId, String coverageId, UriInfo wcsRequestUriInfo) {
+	private Runnable ingestAndQueryRasdamanCallback(String requestId, String coverageId, MarsParameters marsParameters, UriInfo wcsRequestUriInfo) {
 		return () -> {
 			try {
-				ingestAndQueryRasdaman(requestId, coverageId, wcsRequestUriInfo);
+				ingestAndQueryRasdaman(requestId, coverageId, marsParameters, wcsRequestUriInfo);
 			} catch (RasdamanException e) {
-				logger.error(e.getMessage(), e);
-				//throw new RuntimeException(e);
+				throw new RuntimeException(e);
 			}
 		};
 	}
 	
-	private RasdamanResponse ingestAndQueryRasdaman(String requestId, String coverageId, UriInfo wcsRequestUriInfo) throws RasdamanException {
-		try {
-			this.rasdamanClient.ingest(coverageId, Paths.get(this.marsClient.getTargetPath(), requestId).toString(), requestId);
-			return this.rasdamanClient.query(coverageId, wcsRequestUriInfo.getRequestUri().getQuery(), requestId);
-		} finally {
+	private RasdamanResponse ingestAndQueryRasdaman(String requestId, String coverageId, MarsParameters marsParameters, UriInfo wcsRequestUriInfo) throws RasdamanException {
+		RasdamanResponse rasdamanResponse;
+		//try {
+		this.rasdamanClient.ingest(coverageId, marsParameters, Paths.get(this.marsClient.getTargetPath(), requestId).toString(), requestId);
+		rasdamanResponse = this.rasdamanClient.query(coverageId, wcsRequestUriInfo.getRequestUri().getQuery(), requestId);
+		/*} finally {
 			this.rasdamanClient.delete(this.rasdamanClient.generateTempCoverageId(coverageId, requestId));
-		}
+		}*/
+		return rasdamanResponse;
 	}
 	
 	@GET
@@ -305,7 +308,7 @@ public class IntegrationResource {
 		return Response.ok("Response " + requestId + " deleted successfully").type(MediaType.TEXT_PLAIN).build();
 	}
 	
-	@Deprecated
+	/*@Deprecated
 	@POST
 	@Path("query")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -351,6 +354,6 @@ public class IntegrationResource {
 		}
 		
 		return Response.ok(this.uriInfo.getBaseUriBuilder().path(IntegrationResource.class).path("response").path(rasdamanResponseFilename).build().toASCIIString()).build();
-	}
+	}*/
 	
 }

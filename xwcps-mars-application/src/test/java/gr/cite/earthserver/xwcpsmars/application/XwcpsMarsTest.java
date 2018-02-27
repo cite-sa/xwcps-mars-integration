@@ -33,6 +33,7 @@ public class XwcpsMarsTest {
 				"http://earthserver.ecmwf.int/rasdaman/ows",
 				"python /home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/wcst_import.py",
 				"ingredients_template.json",
+				"ingredient_templates",
 				"/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/ingredients",
 				"/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/registration",
 				"/home/kapostolopoulos/Desktop/xwcps-mars/rasdaman/responses",

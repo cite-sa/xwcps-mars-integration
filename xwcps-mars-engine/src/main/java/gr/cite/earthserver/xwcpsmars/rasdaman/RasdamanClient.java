@@ -1,5 +1,6 @@
 package gr.cite.earthserver.xwcpsmars.rasdaman;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
@@ -10,6 +11,7 @@ import gr.cite.commons.utils.xml.exceptions.XMLConversionException;
 import gr.cite.commons.utils.xml.exceptions.XPathEvaluationException;
 import gr.cite.earthserver.wcs.core.WCSRequest;
 import gr.cite.earthserver.wcs.core.WCSRequestBuilder;
+import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
 import org.glassfish.jersey.uri.UriComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,12 +36,16 @@ import java.util.stream.Stream;
 
 public class RasdamanClient implements RasdamanClientAPI {
 	private static final Logger logger = LoggerFactory.getLogger(RasdamanClient.class);
+	private static final ObjectMapper mapper = new ObjectMapper();
 	
 	//private static final String MOCK_PLACEHOLDER = "$MOCK_PLACEHOLDER$";
 	private static final String RASDAMAN_BASE_URL_PLACEHOLDER = "$$RASDAMAN_BASE_URL_PLACEHOLDER$$";
 	
 	private static final String COVERAGE_ID_PLACEHOLDER = "$$COVERAGE_ID_PLACEHOLDER$$";
 	private static final String COVERAGE_FILE_PLACEHOLDER = "$$COVERAGE_FILE_PLACEHOLDER$$";
+	
+	private static final String MARS_METADATA = "$MARS_METADATA$";
+	private static final String BAND_NAME = "$BAND_NAME$";
 	
 	private static final String INSERT_COVERAGE = "InsertCoverage";
 	private static final String UPDATE_COVERAGE = "UpdateCoverage";
@@ -49,7 +55,10 @@ public class RasdamanClient implements RasdamanClientAPI {
 	//private String endpoint;
 	private String baseEndpoint;
 	private String scriptCommand;
+	
+	private String ingredientTemplatePath;
 	private String ingredientTemplateFileNameSuffix;
+	
 	private String registrationPath;
 	private String ingestionPath;
 	private String responsePath;
@@ -62,10 +71,12 @@ public class RasdamanClient implements RasdamanClientAPI {
 	
 	@Inject
 	public RasdamanClient(String baseEndpoint, String endpoint, String scriptCommand,
-						  String ingredientTemplateFileNameSuffix, String registrationPath, String ingestionPath, String responsePath,
+						  String ingredientTemplatePath, String ingredientTemplateFileNameSuffix,
+						  String registrationPath, String ingestionPath, String responsePath,
 						  boolean debug, boolean deleteIngestedCoverage) throws IOException {
 		this.baseEndpoint = baseEndpoint;
 		this.scriptCommand = scriptCommand;
+		this.ingredientTemplatePath = ingredientTemplatePath;
 		this.ingredientTemplateFileNameSuffix = ingredientTemplateFileNameSuffix;
 		this.registrationPath = registrationPath;
 		this.ingestionPath = ingestionPath;
@@ -121,24 +132,36 @@ public class RasdamanClient implements RasdamanClientAPI {
 	}
 	
 	@Override
-	public void ingest(String coverageId, String marsTargetFile, String ingestionFilename) throws RasdamanException {
+	public void ingest(String coverageId, MarsParameters marsParameters, String marsTargetFile, String ingestionFilename) throws RasdamanException {
 		Path ingredientFilePath = Paths.get(this.ingestionPath, ingestionFilename + "_ingredient.json");
 		Path logFilePath = Paths.get(this.ingestionPath, ingestionFilename + ".log");
 		
-		String ingredientContent = buildIngredientContentFromTemplate(coverageId, marsTargetFile, ingestionFilename);
+		String ingredientContent = buildIngredientContentFromTemplate(coverageId, marsParameters, marsTargetFile, ingestionFilename);
 		ingest(ingredientContent, ingredientFilePath, logFilePath);
 		cleanupDebugFiles(ingredientFilePath, logFilePath);
 	}
 	
-	private String buildIngredientContentFromTemplate(String coverageId, String marsTargetFile, String ingestionFilename) throws RasdamanException {
+	private String buildIngredientContentFromTemplate(String coverageId, MarsParameters marsParameters, String marsTargetFile, String ingestionFilename) throws RasdamanException {
+		String ingredientTemplateName = marsParameters.getStream() + "_" + marsParameters.getType() + "_" + marsParameters.getLevtype();
 		try {
-			String ingredientTemplateContent = Resources.toString(Resources.getResource(coverageId + this.ingredientTemplateFileNameSuffix), StandardCharsets.UTF_8);
+			String ingredientTemplateContent = Resources.toString(Resources.getResource(this.ingredientTemplatePath + "/" + ingredientTemplateName + this.ingredientTemplateFileNameSuffix), StandardCharsets.UTF_8);
+			
+			ingredientTemplateContent = ingredientTemplateContent.replace(RasdamanClient.RASDAMAN_BASE_URL_PLACEHOLDER, this.baseEndpoint)
+					.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, generateTempCoverageId(coverageId, ingestionFilename))
+					.replace(RasdamanClient.COVERAGE_FILE_PLACEHOLDER, marsTargetFile)
+					.replace(RasdamanClient.MARS_METADATA, mapper.writeValueAsString(marsParameters.getMetadata()))
+					.replace(RasdamanClient.BAND_NAME, marsParameters.getGribParameterName());
+			
+			return ingredientTemplateContent;
+			
+			
+			/*String ingredientTemplateContent = Resources.toString(Resources.getResource(coverageId + this.ingredientTemplateFileNameSuffix), StandardCharsets.UTF_8);
 			
 			ingredientTemplateContent = ingredientTemplateContent.replace(RasdamanClient.RASDAMAN_BASE_URL_PLACEHOLDER, this.baseEndpoint)
 					.replace(RasdamanClient.COVERAGE_ID_PLACEHOLDER, generateTempCoverageId(coverageId, ingestionFilename))
 					.replace(RasdamanClient.COVERAGE_FILE_PLACEHOLDER, marsTargetFile);
 			
-			return ingredientTemplateContent;
+			return ingredientTemplateContent;*/
 		} catch (IOException e) {
 			throw new RasdamanException("Ingredient file creation failed", e);
 		}
@@ -311,7 +334,9 @@ public class RasdamanClient implements RasdamanClientAPI {
 		
 		wcsRequest = wcsRequest.replace(coverageId, generateTempCoverageId(coverageId, rasdamanResponseFilename));
 		Invocation rasdamanWcsRequest = buildWcsRequest(wcsRequest, this.webTarget);
-		//logger.info(loggingIdMsg + "WCS request [" + rasdamanWcsRequest.toString() + "]");
+		
+		logger.debug(loggingIdMsg + "WCS request [" + wcsRequest + "]");
+		logger.debug(loggingIdMsg + "WCS request [" + rasdamanWcsRequest.toString() + "]");
 		
 		long queryStart = System.currentTimeMillis();
 		Response rasdamanResponse = rasdamanWcsRequest.invoke();
@@ -319,13 +344,14 @@ public class RasdamanClient implements RasdamanClientAPI {
 		logger.info(loggingIdMsg + "WCS request execution time [" + (queryEnd - queryStart) + " ms]");
 		
 		RasdamanResponse response = readAndStoreRasdamanResponse(rasdamanResponse, rasdamanResponseFilename);
-		if (rasdamanResponse.getStatus() != 200) {
-			throw new RasdamanException(loggingIdMsg + "Rasdaman request " + wcsRequest + " failed. " + rasdamanResponse.getStatusInfo().getReasonPhrase());
+		
+		if (this.deleteIngestedCoverage) {
+			delete(generateTempCoverageId(coverageId, rasdamanResponseFilename));
 		}
 		
-		//if (this.deleteIngestedCoverage) {
-		//	delete(generateTempCoverageId(coverageId, rasdamanResponseFilename));
-		//}
+		if (rasdamanResponse.getStatus() < 200 && rasdamanResponse.getStatus() > 299) {
+			throw new RasdamanException(loggingIdMsg + "Rasdaman request " + wcsRequest + " failed. " + rasdamanResponse.getStatusInfo().getReasonPhrase());
+		}
 		
 		return response;
 	}

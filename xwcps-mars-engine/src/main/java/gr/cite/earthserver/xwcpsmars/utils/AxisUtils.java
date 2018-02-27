@@ -250,8 +250,11 @@ public class AxisUtils {
 	}
 	
 	public static void main(String[] args) {
-		boolean valid = AxisUtils.DateTimeTransformation.isValidDateTime("\"1979-01-01T00:00:00+00:00\"");
-		System.out.println(valid);
+		/*boolean valid = AxisUtils.DateTimeTransformation.isValidDateTime("\"1979-01-01T00:00:00+00:00\"");
+		System.out.println(valid);*/
+		
+		LocalDateTime localDateTime = AxisUtils.DateTimeUtil.increaseDateTimeByCoefficientOfDay(LocalDateTime.parse("1979-01-01T00:00:00"), 59.0);
+		System.out.println(localDateTime);
 	}
 
 }

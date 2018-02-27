@@ -1,5 +1,7 @@
 package gr.cite.earthserver.xwcpsmars.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.cite.earthserver.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSLexer;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser;
@@ -23,7 +25,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -168,7 +169,13 @@ public class WcsRequestProcessing {
 			// generateIngestionParameters(subsets, wcsRequestProcessingResult);
 		}
 		
-		MarsRequest finalRequest = finalizeMarsRequest(marsRequestBuilder);
+		Map<String, Object> marsCoverageRegistrationMetadata = this.coverageRegistry.retrieveMarsCoverageMetadata(coverageId);
+		marsCoverageRegistrationMetadata.forEach((key, value) -> logger.debug(key + ": " + value));
+		MarsParameters marsParameters = new MarsParameters(this.marsParametersMapping, marsCoverageRegistrationMetadata);
+		
+		MarsRequest finalRequest = finalizeMarsRequest(marsRequestBuilder, marsParameters);
+		
+		wcsRequestProcessingResult.setMarsParameters(marsParameters);
 		wcsRequestProcessingResult.setMarsRequest(finalRequest);
 		
 		return wcsRequestProcessingResult;
@@ -330,10 +337,8 @@ public class WcsRequestProcessing {
 		marsRequestBuilder.levtype(marsParameters.getLevtype());
 	}*/
 	
-	private MarsRequest finalizeMarsRequest(MarsRequestBuilder marsRequestBuilder) throws CoverageRegistryException {
+	private MarsRequest finalizeMarsRequest(MarsRequestBuilder marsRequestBuilder, MarsParameters marsParameters) throws CoverageRegistryException {
 		//retrieveAndSetMarsParametersFromRegistry(coverageId, marsRequestBuilder);
-		Map<String, Object> marsCoverageRegistrationMetadata = this.coverageRegistry.retrieveMarsCoverageMetadata(coverageId);
-		MarsParameters marsParameters = new MarsParameters(this.marsParametersMapping, marsCoverageRegistrationMetadata);
 		
 		MarsRequest marsRequest = marsRequestBuilder.build(marsParameters);
 		if (marsRequest.getDate() == null || marsRequest.getDate().trim().isEmpty()) {

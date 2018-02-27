@@ -1,6 +1,8 @@
 package gr.cite.earthserver.xwcpsmars.application.resources;
 
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
+import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
+import gr.cite.earthserver.xwcpsmars.mars.MarsParametersMapping;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanResponse;
@@ -13,6 +15,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.HashMap;
 
 @Path("rasdaman")
 public class RasdamanResource {
@@ -32,7 +35,7 @@ public class RasdamanResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	public Response ingest(@QueryParam("coverageId") String coverageId, @QueryParam("marsTargetFile") String marsTargetFile) {
 		try {
-			this.rasdamanClient.ingest(coverageId, this.marsClient.getTargetPath() + "/" + marsTargetFile, marsTargetFile);
+			this.rasdamanClient.ingest(coverageId, new MarsParameters(new MarsParametersMapping(), new HashMap<>()), this.marsClient.getTargetPath() + "/" + marsTargetFile, marsTargetFile);
 		} catch (RasdamanException e) {
 			throw new WebApplicationException(e.getMessage(), e);
 		}

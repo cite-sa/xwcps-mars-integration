@@ -15,6 +15,12 @@ public class MarsParametersMapping {
 	@JsonProperty("stream")
 	private String stream;
 	
+	@JsonProperty("gribParameterName")
+	private String gribParameterName;
+	
+	@JsonProperty("shortName")
+	private String shortName;
+	
 	public String getLevtype() {
 		return levtype;
 	}
@@ -45,5 +51,21 @@ public class MarsParametersMapping {
 	
 	public void setStream(String stream) {
 		this.stream = stream;
+	}
+	
+	public String getGribParameterName() {
+		return gribParameterName;
+	}
+	
+	public void setGribParameterName(String gribParameterName) {
+		this.gribParameterName = gribParameterName;
+	}
+	
+	public String getShortName() {
+		return shortName;
+	}
+	
+	public void setShortName(String shortName) {
+		this.shortName = shortName;
 	}
 }

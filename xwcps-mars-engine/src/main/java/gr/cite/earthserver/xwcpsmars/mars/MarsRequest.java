@@ -61,7 +61,7 @@ public class MarsRequest {
 		this.expver = "0001";
 		this.grid = "0.5/0.5";
 		//this.step = "00";
-		this.stream = "oper";
+		//this.stream = "oper";
 	}
 
 	public String getClassification() {
@@ -262,10 +262,6 @@ public class MarsRequest {
 		}
 
 		public MarsRequest build(MarsParameters marsParameters) {
-			if ("analysis".equals(this.marsRequest.getType()) || "an".equals(this.marsRequest.getType())) {
-				marsRequest.setStep("00");
-			}
-
 			/*if (this.coverageId.contains("mdfa")) {
 				this.marsRequest.setStream("mdfa");
 			} else if (this.coverageId.contains("moda")) {
@@ -276,6 +272,10 @@ public class MarsRequest {
 			this.marsRequest.setParam(marsParameters.getParam());
 			this.marsRequest.setLevtype(marsParameters.getLevtype());
 			this.marsRequest.setStream(marsParameters.getStream());
+			
+			if ("analysis".equals(this.marsRequest.getType()) || "an".equals(this.marsRequest.getType())) {
+				marsRequest.setStep("00");
+			}
 
 			return this.marsRequest;
 		}

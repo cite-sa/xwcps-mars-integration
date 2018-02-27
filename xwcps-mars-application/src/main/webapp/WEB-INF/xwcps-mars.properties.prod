@@ -9,6 +9,7 @@ gr.cite.earthserver.xwcpsmars.mars.target.path=/home/deploy/data/xwcps-mars/mars
 gr.cite.earthserver.xwcpsmars.rasdaman.endpoint=http\://localhost:8080/rasdaman/ows
 gr.cite.earthserver.xwcpsmars.rasdaman.endpoint.base=http\://localhost:8080
 gr.cite.earthserver.xwcpsmars.rasdaman.script.command=python /home/deploy/data/xwcps-mars/wcst_import/wcst_import.py
+gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.path=ingredient_templates
 gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.suffix=-ingredient-template.json
 gr.cite.earthserver.xwcpsmars.rasdaman.registration.path=/home/deploy/data/xwcps-mars/rasdaman/registration
 gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path=/home/deploy/data/xwcps-mars/rasdaman/ingestion

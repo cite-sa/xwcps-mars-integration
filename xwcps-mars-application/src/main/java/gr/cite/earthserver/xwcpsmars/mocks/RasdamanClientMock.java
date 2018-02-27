@@ -1,3 +1,4 @@
+/*
 package gr.cite.earthserver.xwcpsmars.mocks;
 
 import com.google.common.base.Charsets;
@@ -268,3 +269,4 @@ public class RasdamanClientMock implements RasdamanClientAPI {
 				+ updateCoverageMetadata.substring(end, updateCoverageMetadata.length());
 	}
 }
+*/

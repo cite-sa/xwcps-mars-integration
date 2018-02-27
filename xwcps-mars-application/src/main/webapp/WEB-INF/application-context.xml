@@ -70,6 +70,7 @@
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint.base}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.command}" />
+			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.path}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.suffix}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.registration.path}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path}" />
@@ -90,6 +91,7 @@
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint.base}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.command}" />
+			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.path}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.suffix}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.registration.path}" />
 			<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path}" />

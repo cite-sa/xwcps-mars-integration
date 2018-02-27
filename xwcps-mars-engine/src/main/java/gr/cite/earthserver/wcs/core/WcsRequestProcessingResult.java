@@ -2,6 +2,7 @@ package gr.cite.earthserver.wcs.core;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 
@@ -20,6 +21,9 @@ public class WcsRequestProcessingResult {
 	
 	@JsonProperty("marsRequest")
 	private MarsRequest marsRequest;
+	
+	@JsonProperty("marsParameters")
+	private MarsParameters marsParameters;
 	
 	public Map<String, AxisEnvelope> getAxesBounds() {
 		return axesBounds;
@@ -43,5 +47,13 @@ public class WcsRequestProcessingResult {
 	
 	public void setMarsRequest(MarsRequest marsRequest) {
 		this.marsRequest = marsRequest;
+	}
+	
+	public MarsParameters getMarsParameters() {
+		return marsParameters;
+	}
+	
+	public void setMarsParameters(MarsParameters marsParameters) {
+		this.marsParameters = marsParameters;
 	}
 }
