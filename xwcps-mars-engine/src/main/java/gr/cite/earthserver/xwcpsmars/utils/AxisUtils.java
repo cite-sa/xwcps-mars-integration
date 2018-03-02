@@ -62,8 +62,9 @@ public class AxisUtils {
 			if (this.longitudes.size() == 1 ) {
 				List<String> longitudesFromPoint = new ArrayList<>();
 				longitudesFromPoint.add(Double.toString(Double.parseDouble(this.longitudes.get(0)) - 1.0));
-				longitudesFromPoint.add(Double.parseDouble(this.longitudes.get(0)) < 0 ? Double.toString(1.0) : Double.toString(Double.parseDouble(this.longitudes.get(0)) + 1.0));
-
+				//longitudesFromPoint.add(Double.parseDouble(this.longitudes.get(0)) < 0 ? Double.toString(1.0) : Double.toString(Double.parseDouble(this.longitudes.get(0)) + 1.0));
+				longitudesFromPoint.add(Double.toString(Double.parseDouble(this.longitudes.get(0)) + 1.0));
+				
 				this.longitudes = longitudesFromPoint;
 			}
 
@@ -147,22 +148,22 @@ public class AxisUtils {
 	}
 
 	public static final class AxisRangeAggregator {
-		private List<Integer> rangeLimits = new ArrayList<>();
-		private List<Integer> limitedRangeSteps = new ArrayList<>();
+		private List<Double> rangeLimits = new ArrayList<>();
+		private List<Double> limitedRangeSteps = new ArrayList<>();
 
-		public List<Integer> getRangeLimits() {
+		public List<Double> getRangeLimits() {
 			return rangeLimits;
 		}
 
-		public void setRangeLimits(List<Integer> rangeLimits) {
+		public void setRangeLimits(List<Double> rangeLimits) {
 			this.rangeLimits = rangeLimits;
 		}
 
-		public void addRangeLimit(Integer rangeLimit) {
+		public void addRangeLimit(Double rangeLimit) {
 			this.rangeLimits.add(rangeLimit);
 		}
 
-		public List<Integer> getLimitedRangeSteps() {
+		public List<Double> getLimitedRangeSteps() {
 			return this.limitedRangeSteps;
 		}
 
@@ -170,7 +171,7 @@ public class AxisUtils {
 			return this.limitedRangeSteps.stream().map(Object::toString).collect(Collectors.toList());
 		}
 
-		public void limitAxisRangeSteps(List<Integer> rangeSteps) {
+		public void limitAxisRangeSteps(List<Double> rangeSteps) {
 			this.rangeLimits.sort(Comparator.naturalOrder());
 			this.limitedRangeSteps = rangeSteps.stream()/*.sorted(Comparator.naturalOrder())*/
 					.filter(rangeStep -> {
@@ -253,7 +254,7 @@ public class AxisUtils {
 		/*boolean valid = AxisUtils.DateTimeTransformation.isValidDateTime("\"1979-01-01T00:00:00+00:00\"");
 		System.out.println(valid);*/
 		
-		LocalDateTime localDateTime = AxisUtils.DateTimeUtil.increaseDateTimeByCoefficientOfDay(LocalDateTime.parse("1979-01-01T00:00:00"), 59.0);
+		LocalDateTime localDateTime = AxisUtils.DateTimeUtil.increaseDateTimeByCoefficientOfDay(LocalDateTime.parse("1979-01-01T00:00:00"), 31.0);
 		System.out.println(localDateTime);
 	}
 

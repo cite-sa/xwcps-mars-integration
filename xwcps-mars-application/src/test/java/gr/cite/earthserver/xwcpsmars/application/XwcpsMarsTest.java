@@ -41,7 +41,7 @@ public class XwcpsMarsTest {
 				false
 				);
 		this.femmeClient = new FemmeClient("http://localhost:8090/femme-application-devel");
-		this.coverageRegistry = new CoverageRegistry(this.femmeClient);
+		this.coverageRegistry = new CoverageRegistry(this.femmeClient, "", "");
 
 		//this.coverageRegistryRasdamanConnector = new CoverageRegistryRasdamanConnector(this.rasdamanClient, this.coverageRegistry);
 		//System.out.println("MARS collection id: " + this.coverageRegistryRasdamanConnector.getMarsCollectionId());

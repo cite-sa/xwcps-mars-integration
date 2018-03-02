@@ -2,7 +2,8 @@ package gr.cite.earthserver.xwcpsmars.application.resources;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
-import gr.cite.earthserver.wcs.core.WcsRequestProcessingResult;
+import gr.cite.earthserver.wcps.parser.XWCPSQueryParser;
+import gr.cite.earthserver.xwcpsmars.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParametersMapping;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
@@ -22,6 +23,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 
 @Path("parser")
@@ -32,13 +34,15 @@ public class ParserResource {
 
 	private CoverageRegistry coverageRegistry;
 	private MarsClientAPI marsClient;
+	private XWCPSQueryParser xwcpsQueryParser;
 
 	@Inject
-	public ParserResource(CoverageRegistry coverageRegistry, MarsClientAPI marsClient) throws IOException {
+	public ParserResource(CoverageRegistry coverageRegistry, MarsClientAPI marsClient, XWCPSQueryParser xwcpsQueryParser) throws IOException {
 		this.coverageRegistry = coverageRegistry;
 		this.marsClient = marsClient;
-		this.marsParametersMapping = mapper.readValue(Resources.toString(Resources.getResource("mars-parameters-mapping.json"), StandardCharsets.UTF_8), MarsParametersMapping.class);
+		this.xwcpsQueryParser = xwcpsQueryParser;
 		
+		this.marsParametersMapping = mapper.readValue(Resources.toString(Resources.getResource("mars-parameters-mapping.json"), StandardCharsets.UTF_8), MarsParametersMapping.class);
 	}
 
 	@GET
@@ -48,9 +52,10 @@ public class ParserResource {
 		try {
 			long startTime = System.currentTimeMillis();
 			
-			WcsRequestProcessing wcsRequestProcessing = new WcsRequestProcessing(requestUriInfo.getQueryParameters(), this.coverageRegistry, this.marsParametersMapping);
-			WcsRequestProcessingResult wcsRequestProcessingResult = wcsRequestProcessing.buildMarsRequest();
-
+			WcsRequestProcessing wcsRequestProcessing = new WcsRequestProcessing(requestUriInfo.getQueryParameters(), this.xwcpsQueryParser, this.coverageRegistry, this.marsParametersMapping);
+			List<WcsRequestProcessingResult> wcsRequestProcessingResults = wcsRequestProcessing.buildMarsRequest();
+			
+			WcsRequestProcessingResult wcsRequestProcessingResult = wcsRequestProcessingResults.get(0);
 			long endTime = System.currentTimeMillis();
 			logger.info("Query translation execution time [" + (endTime - startTime) + "]");
 			

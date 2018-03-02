@@ -9,7 +9,7 @@
 			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
 
-	<context:property-placeholder location="WEB-INF/xwcps-mars.properties.prod" />
+	<context:property-placeholder location="WEB-INF/xwcps-mars.properties.earthserver2e" />
 
 	<!--<bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager" p:cache-manager-ref="ehcache"/>
 	<bean id="ehcache" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" p:config-location="ehcache.xml"/>-->
@@ -22,27 +22,33 @@
 		<property name="cacheManager" ref="jCacheManager" />
 	</bean>-->
 
+	<bean id="wcsAdapter" class="gr.cite.earthserver.wcs.adapter.WCSAdapter">
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.femme.endpoint}" />
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.indexModeOn} "/>
+	</bean>
+	<bean id="xwcpsQueryParser" name="xwcpsQueryParser" class="gr.cite.earthserver.wcps.parser.XWCPSQueryParser">
+		<constructor-arg ref="wcsAdapter" />
+	</bean>
+
 	<bean id="femmeClient" class="gr.cite.femme.client.FemmeClient">
 		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.femme.endpoint}" />
 	</bean>
-
 	<bean id="coverageRegistry" class="gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry">
 		<constructor-arg ref="femmeClient"/>
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.registry.collection.endpoint} "/>
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.registry.coverage.endpoint} "/>
 	</bean>
-
-	<!--<bean id="coverageRegistryRasdamanConnector" class="gr.cite.earthserver.xwcpsmars.rasdaman.CoverageRegistryRasdamanConnector">
-		<constructor-arg ref="rasdamanClient"/>
-		<constructor-arg ref="coverageRegistry"/>
-	</bean>-->
 
 	<bean id="integrationResource" class="gr.cite.earthserver.xwcpsmars.application.resources.IntegrationResource">
 		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.hostname}" />
 		<constructor-arg ref="marsClient"/>
 		<constructor-arg ref="rasdamanClient"/>
 		<constructor-arg ref="coverageRegistry"/>
+		<constructor-arg ref="xwcpsQueryParser"/>
 	</bean>
 	<bean id="parserResource" class="gr.cite.earthserver.xwcpsmars.application.resources.ParserResource">
 		<constructor-arg ref="coverageRegistry"/>
+		<constructor-arg ref="xwcpsQueryParser"/>
 	</bean>
 	<bean id="marsResource" class="gr.cite.earthserver.xwcpsmars.application.resources.MarsResource">
 		<constructor-arg ref="marsClient"/>

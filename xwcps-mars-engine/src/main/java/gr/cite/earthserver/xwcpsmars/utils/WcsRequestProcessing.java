@@ -1,8 +1,8 @@
 package gr.cite.earthserver.xwcpsmars.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import gr.cite.earthserver.wcs.core.WcsRequestProcessingResult;
+import gr.cite.earthserver.wcps.parser.XWCPSQueryParser;
+import gr.cite.earthserver.wcps.parser.evaluation.Query;
+import gr.cite.earthserver.xwcpsmars.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSLexer;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
@@ -25,6 +25,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -61,10 +62,13 @@ public class WcsRequestProcessing {
 	private boolean isGetCoverageRequest = false;
 	private boolean isProcessCoveragesRequest = false;
 	
-	private CoverageRegistry coverageRegistry;
-	private  MarsParametersMapping marsParametersMapping;
+	private XWCPSQueryParser xwcpsQueryParser;
 	
-	public WcsRequestProcessing(MultivaluedMap<String, String> requestParameters, CoverageRegistry coverageRegistry, MarsParametersMapping marsParametersMapping) {
+	private CoverageRegistry coverageRegistry;
+	private MarsParametersMapping marsParametersMapping;
+	
+	public WcsRequestProcessing(MultivaluedMap<String, String> requestParameters, XWCPSQueryParser xwcpsQueryParser, CoverageRegistry coverageRegistry, MarsParametersMapping marsParametersMapping) {
+		this.xwcpsQueryParser = xwcpsQueryParser;
 		this.coverageRegistry = coverageRegistry;
 		this.marsParametersMapping = marsParametersMapping;
 		
@@ -153,30 +157,56 @@ public class WcsRequestProcessing {
 		return GetCapabilitiesUtil.generateDocument(this.coverageRegistry.getRegisteredCoverageIds());
 	}
 	
-	public WcsRequestProcessingResult buildMarsRequest() throws CoverageRegistryException {
-		MarsRequestBuilder marsRequestBuilder;
-		WcsRequestProcessingResult wcsRequestProcessingResult = new WcsRequestProcessingResult();
+	public List<WcsRequestProcessingResult> buildMarsRequest() throws CoverageRegistryException {
+		//List<MarsRequestBuilder> marsRequestBuilders = new ArrayList<>();
+		List<WcsRequestProcessingResult> wcsRequestProcessingResults = new ArrayList<>();
 		
 		if (WcsRequestProcessing.PROCESS_COVERAGES.equals(this.request)) {
-			marsRequestBuilder = parseProcessCoverageRequest();
+			Query rewrittenQuery = this.xwcpsQueryParser.parse(this.processCoveragesRequest.getQuery());
+			
+			List<String> rewrittenQueries = rewrittenQuery.getSplittedQuery().stream()
+					.map(splitQuery -> splitQuery.getQuery() + splitQuery.getAggregatedValue()).collect(Collectors.toList());
+			
+			for (String rewrittenQueryString: rewrittenQueries) {
+				MarsRequestBuilder processCoveragesMarsRequestBuilder = parseProcessCoverageRequest(rewrittenQueryString);
+				
+				WcsRequestProcessingResult wcsRequestProcessingResult = buildWcsRequestProcessingResult(processCoveragesMarsRequestBuilder, rewrittenQueryString);
+				wcsRequestProcessingResults.add(wcsRequestProcessingResult);
+				//marsRequestBuilders.add(processCoveragesMarsRequestBuilder);
+			}
 		} else {
 			this.coverageId = this.getDescribeCoverageRequest.getCoverageId();
-			marsRequestBuilder = MarsRequest.builder(this.coverageId);
+			MarsRequestBuilder getDescribeCoverageMarsRequestBuilder = MarsRequest.builder(this.coverageId);
 			
 			List<String> subsets = this.getDescribeCoverageRequest.getSubsets() != null ? this.getDescribeCoverageRequest.getSubsets() : new ArrayList<>();
-			transformWcsToMarsParameters(subsets, marsRequestBuilder);
+			transformWcsToMarsParameters(subsets, getDescribeCoverageMarsRequestBuilder);
 			
-			// generateIngestionParameters(subsets, wcsRequestProcessingResult);
+			WcsRequestProcessingResult wcsRequestProcessingResult = buildWcsRequestProcessingResult(getDescribeCoverageMarsRequestBuilder, null);
+			wcsRequestProcessingResults.add(wcsRequestProcessingResult);
+			//marsRequestBuilders.add(getDescribeCoverageMarsRequestBuilder);
 		}
 		
-		Map<String, Object> marsCoverageRegistrationMetadata = this.coverageRegistry.retrieveMarsCoverageMetadata(coverageId);
+		/*for (MarsRequestBuilder marsRequestBuilder: marsRequestBuilders) {
+			buildWcsRequestProcessingResult(marsRequestBuilder, null);
+			
+			wcsRequestProcessingResults.add(wcsRequestProcessingResult);
+		}*/
+		
+		return wcsRequestProcessingResults;
+	}
+	
+	private WcsRequestProcessingResult buildWcsRequestProcessingResult(MarsRequestBuilder marsRequestBuilder, String rewrittenQuery) throws CoverageRegistryException {
+		Map<String, Object> marsCoverageRegistrationMetadata = this.coverageRegistry.retrieveMarsCoverageMetadata(marsRequestBuilder.getCoverageId());
 		marsCoverageRegistrationMetadata.forEach((key, value) -> logger.debug(key + ": " + value));
 		MarsParameters marsParameters = new MarsParameters(this.marsParametersMapping, marsCoverageRegistrationMetadata);
 		
 		MarsRequest finalRequest = finalizeMarsRequest(marsRequestBuilder, marsParameters);
 		
+		WcsRequestProcessingResult wcsRequestProcessingResult = new WcsRequestProcessingResult();
 		wcsRequestProcessingResult.setMarsParameters(marsParameters);
 		wcsRequestProcessingResult.setMarsRequest(finalRequest);
+		
+		wcsRequestProcessingResult.setRewrittenQuery(rewrittenQuery);
 		
 		return wcsRequestProcessingResult;
 	}
@@ -245,9 +275,9 @@ public class WcsRequestProcessing {
 		return envelope;
 	}
 	
-	private MarsRequestBuilder parseProcessCoverageRequest() {
+	private MarsRequestBuilder parseProcessCoverageRequest(String processCoveragesRequest) {
 		MarsRequestBuilder marsRequestBuilder;
-		CharStream stream = CharStreams.fromString(this.processCoveragesRequest.getQuery());
+		CharStream stream = CharStreams.fromString(processCoveragesRequest);
 		XWCPSLexer lexer = new XWCPSLexer(stream);
 		XWCPSParser parser = new XWCPSParser(new CommonTokenStream(lexer));
 		
@@ -298,15 +328,20 @@ public class WcsRequestProcessing {
 						marsRequestBuilder.time(dateTimeTransformation.buildMarsTime());
 					}
 				} else {
-					List<Integer> rangeSteps = retrieveAxisDiscreteValues(this.coverageId, axisLabel);
-					
-					logger.debug("Initial range [" + rangeSteps.stream().map(Object::toString).collect(Collectors.joining(",")) + "]");
-					
-					AxisUtils.AxisRangeAggregator rangeAggregator = new AxisUtils.AxisRangeAggregator();
-					rangeAggregator.setRangeLimits(subsetRange.stream().map(Integer::parseInt).collect(Collectors.toList()));
-					rangeAggregator.limitAxisRangeSteps(rangeSteps);
-					
-					marsRequestBuilder.mapAxisNameToMarsField(axisLabel, rangeAggregator.stringifyAndGetLimitedRangeSteps());
+					if (subsetRange.size() == 1) {
+						logger.debug(axisLabel + " subset [" + subsetRange.get(0) + "]");
+						marsRequestBuilder.mapAxisNameToMarsField(axisLabel, Collections.singletonList(subsetRange.get(0)));
+					} else {
+						List<Double> rangeSteps = retrieveAxisDiscreteValues(this.coverageId, axisLabel);
+						
+						logger.debug("Initial range [" + rangeSteps.stream().map(Object::toString).collect(Collectors.joining(",")) + "]");
+						
+						AxisUtils.AxisRangeAggregator rangeAggregator = new AxisUtils.AxisRangeAggregator();
+						rangeAggregator.setRangeLimits(subsetRange.stream().map(Double::parseDouble).collect(Collectors.toList()));
+						rangeAggregator.limitAxisRangeSteps(rangeSteps);
+						
+						marsRequestBuilder.mapAxisNameToMarsField(axisLabel, rangeAggregator.stringifyAndGetLimitedRangeSteps());
+					}
 				}
 			}
 		}
@@ -322,11 +357,18 @@ public class WcsRequestProcessing {
 		return new Pair<>(axisLabel, subsetRange);
 	}
 	
-	private List<Integer> retrieveAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {
-		Integer origin = Integer.parseInt(this.coverageRegistry.retrieveAxisOriginPoint(coverageId, axisName));
+	private List<Double> retrieveAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {
+		Double origin = Double.parseDouble(this.coverageRegistry.retrieveAxisOriginPoint(coverageId, axisName));
 		List<String> coefficients = this.coverageRegistry.retrieveAxisCoefficients(coverageId, axisName);
 		
-		return coefficients.stream().map(Integer::parseInt).map(coefficient -> origin + coefficient).collect(Collectors.toList());
+		if (coefficients.isEmpty()) {
+			return coefficients.stream().map(Double::parseDouble).map(coefficient -> origin + coefficient).collect(Collectors.toList());
+		} else {
+			Double axisOffsetVector = this.coverageRegistry.retrieveAxisOffsetVector(coverageId, axisName);
+			return coefficients.stream().map(Double::parseDouble).map(coefficient -> origin + coefficient).collect(Collectors.toList());
+		}
+		
+		
 	}
 	
 	/*private void retrieveAndSetMarsParametersFromRegistry(String coverageId, MarsRequestBuilder marsRequestBuilder) throws CoverageRegistryException {

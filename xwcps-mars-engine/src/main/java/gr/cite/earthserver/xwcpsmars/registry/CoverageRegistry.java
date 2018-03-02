@@ -31,33 +31,39 @@ public class CoverageRegistry {
 	
 	
 	private static final String COVERAGE_METADATA_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/gmlcov:metadata/text()";
+	
 	private static final String ENVELOPE_AXIS_LABELS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='boundedBy']/*[local-name()='Envelope']/@axisLabels";
 	private static final String ENVELOPE_UPPER_CORNER_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='boundedBy']/*[local-name()='Envelope']/*[local-name()='upperCorner']/text()";
 	private static final String ENVELOPE_LOWER_CORNER_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='boundedBy']/*[local-name()='Envelope']/*[local-name()='lowerCorner']/text()";
+	
 	//private static final String AXIS_COEFFICIENTS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis[gmlrgrid:gridAxesSpanned='$$AXIS_NAME_PLACEHOLDER$$']/gmlrgrid:coefficients/text()";
 	private static final String RANGE_PARAMETERS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/gml:rangeSet/gml:rangeParameters/text()";
+	
 	private static final String ORIGIN_POINT_AXIS_LABELS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gml:origin/*[local-name()='Point']/@axisLabels";
 	private static final String ORIGIN_POINT_POS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gml:origin/*[local-name()='Point']/*[local-name()='pos']/text()";
+	
+	//private static final String UPPER_CORNERS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='boundedBy']/*[local-name()='Envelope']/*[local-name()='upperCorner']/text()";
+	
 	private static final String AXIS_COEFFICIENTS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis[gmlrgrid:gridAxesSpanned='$$AXIS_NAME_PLACEHOLDER$$']/gmlrgrid:coefficients/text()";
+	private static final String AXIS_OFFSET_VECTOR_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis[gmlrgrid:gridAxesSpanned='$$AXIS_NAME_PLACEHOLDER$$']/gmlrgrid:offsetVector/text()";
 	
 	private static final String GENERAL_GRID_AXIS_LABEL_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis/gmlrgrid:gridAxesSpanned/text()";
 	private static final String GENERAL_GRID_AXIS_COEFFICIENTS_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/*[local-name()='domainSet']/gml:ReferenceableGridByVectors/gmlrgrid:generalGridAxis/gmlrgrid:GeneralGridAxis[gmlrgrid:gridAxesSpanned='$$AXIS_NAME_PLACEHOLDER$$']/gmlrgrid:coefficients/text()";
 	
-	
 	private static final String MARS_COLLECTION_NAME = "MARS";
-	private static final String MARS_COLLECTION_ENDPOINT = "http://www.ecmwf.int";
-	private static final String MARS_COVERAGE_ENDPOINT = "http://earthserver.ecmwf.int/rasdaman/ows";
 	
 	private FemmeClientAPI femmeClient;
-	/*private String retrieveMarsCoverageMetadataXPath;
-	private String retrieveMarsCoverageAxisCoefficientsXPath;*/
+	
+	private String collectionEndpoint;
+	private String coverageEndpoint;
+	
 	private String marsCollectionId;
 	
 	@Inject
-	public CoverageRegistry(FemmeClientAPI femmeClient) throws CoverageRegistryException {
+	public CoverageRegistry(FemmeClientAPI femmeClient, String collectionEndpoint, String coverageEndpoint) throws CoverageRegistryException {
 		this.femmeClient = femmeClient;
-		/*this.retrieveMarsCoverageMetadataXPath = retrieveMarsCoverageMetadataXPath;
-		this.retrieveMarsCoverageAxisCoefficientsXPath = retrieveMarsCoverageAxisCoefficientsXPath;*/
+		this.collectionEndpoint = collectionEndpoint;
+		this.coverageEndpoint = coverageEndpoint;
 		
 		//registerMarsCollection();
 	}
@@ -66,7 +72,7 @@ public class CoverageRegistry {
 		if (this.marsCollectionId == null) {
 			Collection marsCollection = new Collection();
 			marsCollection.setName(CoverageRegistry.MARS_COLLECTION_NAME);
-			marsCollection.setEndpoint(CoverageRegistry.MARS_COLLECTION_ENDPOINT);
+			marsCollection.setEndpoint(this.collectionEndpoint);
 			try {
 				this.marsCollectionId = this.femmeClient.insert(marsCollection);
 				logger.info("Registered MARS collection [" + this.marsCollectionId + "]");
@@ -83,11 +89,11 @@ public class CoverageRegistry {
 			
 			DataElement coverage = new DataElement();
 			coverage.setName(coverageId);
-			coverage.setEndpoint(CoverageRegistry.MARS_COVERAGE_ENDPOINT);
+			coverage.setEndpoint(this.coverageEndpoint);
 			
 			Metadatum coverageMetadatum = new Metadatum();
 			coverageMetadatum.setValue(coverageMetadata);
-			coverageMetadatum.setName("MARS coverage " + coverageId + " Rasdaman registration metadata");
+			coverageMetadatum.setName(coverageId + " Rasdaman registration metadata");
 			coverageMetadatum.setContentType(MediaType.APPLICATION_XML);
 			
 			coverage.setMetadata(Collections.singletonList(coverageMetadatum));
@@ -230,13 +236,43 @@ public class CoverageRegistry {
 		}
 	}
 	
+	private List<String> retrieveAxisLabels(String coverageId) throws FemmeException, FemmeClientException, CoverageRegistryException {
+		String axisLabelsXPath = CoverageRegistry.ENVELOPE_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
+		String axesString = queryCoverageRegistryByXPath(axisLabelsXPath);
+		
+		if (axesString == null || axesString.isEmpty()) return Collections.emptyList();
+		else return Arrays.asList(axesString.split(" "));
+	}
+	
 	public List<String> retrieveAxisCoefficients(String coverageId, String axisName) throws CoverageRegistryException {
 		try {
 			String xPath = CoverageRegistry.AXIS_COEFFICIENTS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId).replace(CoverageRegistry.AXIS_NAME_PLACEHOLDER, axisName);
-			return Arrays.asList(queryCoverageRegistryByXPath(xPath).split(" "));
+			String coefficientsString = queryCoverageRegistryByXPath(xPath);
+			
+			if (coefficientsString != null) return Arrays.asList(coefficientsString.split(" "));
+			else return Collections.emptyList();
 		} catch (FemmeException | FemmeClientException e) {
 			throw new CoverageRegistryException(e);
 		}
+	}
+	
+	public Double retrieveAxisOffsetVector(String coverageId, String axisName) throws CoverageRegistryException {
+		try {
+			Integer axisOrder = retrieveAxisOrder(coverageId, axisName);
+			String xPath = CoverageRegistry.AXIS_OFFSET_VECTOR_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId).replace(CoverageRegistry.AXIS_NAME_PLACEHOLDER, axisName);
+			return Double.parseDouble(queryCoverageRegistryByXPath(xPath).split(" ")[axisOrder]);
+		} catch (FemmeException | FemmeClientException e) {
+			throw new CoverageRegistryException(e);
+		}
+	}
+	
+	private Integer retrieveAxisOrder(String coverageId, String axisName) throws FemmeException, FemmeClientException, CoverageRegistryException {
+		List<String> axes = retrieveAxisLabels(coverageId);
+		for (int i = 0; i < axes.size(); i ++) {
+			if (axes.get(i).equals(axisName)) return i;
+		}
+		
+		return -1;
 	}
 	
 	public String retrieveAxisOriginPoint(String coverageId, String axisName) throws CoverageRegistryException {
@@ -270,12 +306,51 @@ public class CoverageRegistry {
 		}
 	}
 	
+	/*public String retrieveAxisUpperCorner(String coverageId, String axisName) throws CoverageRegistryException {
+		try {
+			String upperCorner = CoverageRegistry.UPPER_CORNERS_XPATH(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
+			String originPoint = queryCoverageRegistryByXPath(originPointXPath);
+			
+			String originPointAxisLabelsXPath = CoverageRegistry.ORIGIN_POINT_AXIS_LABELS_XPATH.replace(CoverageRegistry.COVERAGE_ID_PLACEHOLDER, coverageId);
+			String originPointAxisLabels = queryCoverageRegistryByXPath(originPointAxisLabelsXPath);
+			
+			int axisIndex = -1;
+			List<String> axisLabels = Arrays.asList(originPointAxisLabels.split(" "));
+			for (int i = 0; i < axisLabels.size(); i++) {
+				if (axisName.equals(axisLabels.get(i))) {
+					axisIndex = i;
+					break;
+				}
+			}
+			
+			String axisOriginPoint;
+			if (axisIndex > -1) {
+				axisOriginPoint = originPoint.split(" ")[axisIndex];
+			} else {
+				throw new CoverageRegistryException("No axis label found [" + axisName + "]");
+			}
+			
+			return axisOriginPoint;
+			
+		} catch (FemmeException | FemmeClientException e) {
+			throw new CoverageRegistryException(e);
+		}
+	}*/
+	
 	//@CacheResult(cacheName = "xpath")
 	private String queryCoverageRegistryByXPath(String xPath) throws FemmeClientException, FemmeException, CoverageRegistryException {
 		logger.debug("XPath [" + xPath + "]");
-		return this.femmeClient.getDataElementsInMemoryXPath(null, null, xPath)
+		/*return this.femmeClient.getDataElementsInMemoryXPath(null, null, xPath)
 				.stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No coverage satisfying XPath [" + xPath + "]"))
-				.getMetadata().stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No metadata satisfying XPath [" + xPath + "]")).getValue();
+				.getMetadata().stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No metadata satisfying XPath [" + xPath + "]")).getValue();*/
+		
+		DataElement dataElement = this.femmeClient.getDataElementsInMemoryXPath(null, null, xPath).stream().findFirst().orElse(null);
+		if (dataElement != null) {
+			return dataElement.getMetadata().stream().findFirst().orElseThrow(() -> new CoverageRegistryException("No metadata satisfying XPath [" + xPath + "]")).getValue();
+		}
+		
+		return null;
+		
 	}
 	
 	@Deprecated

@@ -1,16 +1,14 @@
 package gr.cite.earthserver.xwcpsmars.rasdaman;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Resources;
 import gr.cite.commons.utils.xml.XMLConverter;
 import gr.cite.commons.utils.xml.XPathEvaluator;
 import gr.cite.commons.utils.xml.exceptions.XMLConversionException;
 import gr.cite.commons.utils.xml.exceptions.XPathEvaluationException;
-import gr.cite.earthserver.wcs.core.WCSRequest;
-import gr.cite.earthserver.wcs.core.WCSRequestBuilder;
+import gr.cite.earthserver.xwcpsmars.wcs.core.WCSRequest;
+import gr.cite.earthserver.xwcpsmars.wcs.core.WCSRequestBuilder;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
 import org.glassfish.jersey.uri.UriComponent;
 import org.slf4j.Logger;

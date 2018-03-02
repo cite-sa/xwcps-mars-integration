@@ -202,11 +202,11 @@
                 <version>${tomcat7-maven-plugin.version}</version>
                 <configuration>
                     <port>8100</port>
-                    <path>/xwcps-mars-devel</path>
-                    <!--<contextFile>src/main/webapp/WEB-INF/web.xml</contextFile>-->
-                    <!--<mode>context</mode>-->
+                    <path>/xwcps-mars</path>
                     <charset>UTF-8</charset>
-                    <!--<warDirectory>target/${project.artifactId}-${project.version}</warDirectory>-->
+                    <systemProperties>
+                        <logback.configurationFile>logback-dev.xml</logback.configurationFile>
+                    </systemProperties>
                 </configuration>
             </plugin>
         </plugins>

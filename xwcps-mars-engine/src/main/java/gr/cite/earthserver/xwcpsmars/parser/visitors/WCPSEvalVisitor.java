@@ -137,7 +137,7 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
             } else {
                 // TODO process other axes
                 this.axisRangeAggregator = new AxisUtils.AxisRangeAggregator();
-                List<Integer> rangeSteps = null;
+                List<Double> rangeSteps = null;
                 try {
                     /*rangeSteps = this.coverageRegistry.retrieveAxisDiscreteValues(this.coverageId, axisName).stream()
 							.map(Integer::parseInt).collect(Collectors.toList());*/
@@ -145,18 +145,18 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
                 } catch (CoverageRegistryException e) {
                     logger.error(e.getMessage(), e);
                 }
-                coverageExpressions.stream().map(Integer::parseInt).forEach(this.axisRangeAggregator::addRangeLimit);
+                coverageExpressions.stream().map(Double::parseDouble).forEach(this.axisRangeAggregator::addRangeLimit);
                 this.axisRangeAggregator.limitAxisRangeSteps(rangeSteps);
                 this.marsRequestBuilder.mapAxisNameToMarsField(axisName, this.axisRangeAggregator.stringifyAndGetLimitedRangeSteps());
             }
         }
     }
 
-    private List<Integer> retrieveAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {
+    private List<Double> retrieveAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {
         Integer origin = Integer.parseInt(this.coverageRegistry.retrieveAxisOriginPoint(coverageId, axisName));
         List<String> coefficients = this.coverageRegistry.retrieveAxisCoefficients(coverageId, axisName);
 
-        return coefficients.stream().map(Integer::parseInt).map(coefficient -> origin + coefficient).collect(Collectors.toList());
+        return coefficients.stream().map(Double::parseDouble).map(coefficient -> origin + coefficient).collect(Collectors.toList());
     }
 
     private void buildMarsRequest() {

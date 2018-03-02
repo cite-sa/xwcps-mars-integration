@@ -190,7 +190,11 @@ public class MarsRequest {
 			this.coverageId = coverageId;
 			this.marsRequest = new MarsRequest();
 		}
-
+		
+		public String getCoverageId() {
+			return coverageId;
+		}
+		
 		public MarsRequestBuilder classification(String classification) {
 			this.marsRequest.setClassification(classification);
 			return this;
@@ -237,7 +241,18 @@ public class MarsRequest {
 		}
 
 		public MarsRequestBuilder step(List<String> steps) {
-			this.marsRequest.setStep(steps.stream().map(step -> Integer.parseInt(step) < 10 ? "0" + step : step).collect(Collectors.joining("/")));
+			this.marsRequest.setStep(steps.stream().map(step -> {
+				double stepDouble = Double.parseDouble(step);
+				if (stepDouble <= -10) {
+					return step;
+				} else if (stepDouble < 0 && stepDouble > -9.9) {
+					return "-0" + (stepDouble * -1);
+				} else if (stepDouble >= 0 && stepDouble < 10) {
+					return "0" + step;
+				} else {
+					return step;
+				}
+			}).collect(Collectors.joining("/")));
 			return this;
 		}
 
