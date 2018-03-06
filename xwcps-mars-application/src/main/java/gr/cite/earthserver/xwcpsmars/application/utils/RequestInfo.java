@@ -12,11 +12,7 @@ public class RequestInfo {
 	private String wcsRequest;
 	private String marsRequest;
 	private RequestStatus status;
-
-	public RequestInfo(String id, RequestStatus status) {
-		this.id = id;
-		this.status = status;
-	}
+	private Exception error;
 
 	public String getId() {
 		return id;
@@ -48,5 +44,13 @@ public class RequestInfo {
 
 	public void setStatus(RequestStatus status) {
 		this.status = status;
+	}
+
+	public Exception getError() {
+		return error;
+	}
+
+	public void setError(Exception error) {
+		this.error = error;
 	}
 }

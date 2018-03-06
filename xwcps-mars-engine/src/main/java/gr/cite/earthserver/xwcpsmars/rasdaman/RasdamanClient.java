@@ -360,7 +360,8 @@ public class RasdamanClient implements RasdamanClientAPI {
 		
 		for (String queryParam : wcsRequest.split("&")) {
 			String[] param = queryParam.split("=");
-			tempRasdamanWebTarget = tempRasdamanWebTarget.queryParam(param[0], UriComponent.encode(param[1], UriComponent.Type.QUERY_PARAM_SPACE_ENCODED));
+			if (param.length == 2)
+				tempRasdamanWebTarget = tempRasdamanWebTarget.queryParam(param[0], UriComponent.encode(param[1], UriComponent.Type.QUERY_PARAM_SPACE_ENCODED));
 		}
 		return tempRasdamanWebTarget.request(MediaType.APPLICATION_XML).buildGet();
 	}

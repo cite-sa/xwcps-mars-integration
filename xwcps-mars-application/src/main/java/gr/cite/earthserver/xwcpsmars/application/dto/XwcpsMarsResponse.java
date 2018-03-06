@@ -10,16 +10,16 @@ public class XwcpsMarsResponse<T> {
 	@JsonProperty("status")
 	private Integer status;
 	
-	@JsonProperty
+	@JsonProperty("code")
 	private Integer code;
 	
-	@JsonProperty
+	@JsonProperty("message")
 	private String message;
 	
-	@JsonProperty
+	@JsonProperty("developerMessage")
 	private String developerMessage;
 	
-	@JsonProperty
+	@JsonProperty("entity")
 	private XwcpsMarsResponseEntity<T> entity;
 
 	public XwcpsMarsResponse() {
