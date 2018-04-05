@@ -13,6 +13,9 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class WcsRequestProcessingResult {
 	
+	@JsonProperty("coverageId")
+	private String coverageId;
+	
 	@JsonProperty("axesBounds")
 	private Map<String, AxisEnvelope> axesBounds;
 	
@@ -27,6 +30,14 @@ public class WcsRequestProcessingResult {
 	
 	@JsonIgnore
 	private String rewrittenQuery;
+	
+	public String getCoverageId() {
+		return coverageId;
+	}
+	
+	public void setCoverageId(String coverageId) {
+		this.coverageId = coverageId;
+	}
 	
 	public Map<String, AxisEnvelope> getAxesBounds() {
 		return axesBounds;

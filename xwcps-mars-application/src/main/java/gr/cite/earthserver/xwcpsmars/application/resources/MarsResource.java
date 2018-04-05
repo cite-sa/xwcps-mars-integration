@@ -5,6 +5,7 @@ import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;

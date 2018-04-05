@@ -11,6 +11,7 @@ import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
 import gr.cite.earthserver.xwcpsmars.utils.WcsRequestProcessing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;

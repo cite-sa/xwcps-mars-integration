@@ -53,12 +53,12 @@ public class MarsClient implements MarsClientAPI {
 		return targetPath;
 	}
 
-	@Override
+	/*@Override
 	public void retrieve(String marsTargetFilename, MarsRequest marsRequest, Runnable rasdamanRunnable) throws MarsClientException {
 		retrieve(marsTargetFilename, marsRequest);
 		Thread rasdamanThread = new Thread(rasdamanRunnable);
 		rasdamanThread.start();
-	}
+	}*/
 
 	@Override
 	public String retrieve(String marsTargetFilename, MarsRequest marsRequest) throws MarsClientException {
@@ -128,63 +128,12 @@ public class MarsClient implements MarsClientAPI {
 		Files.setPosixFilePermissions(marsTargetFile, perms);
 	}
 
-	@Deprecated
 	@Override
-	public void retrieve(String marsTargetFilename, Map<String, String> marsParameters, Runnable rasdamanRunnable) throws MarsClientException {
-		Path marsTargetFilePath = Paths.get(this.targetPath, marsTargetFilename);
-		marsParameters.put("target", marsTargetFilePath.toString());
-
-		//String marsEcmwfDataServerInfoJson;
-		String marsParametersJson;
-		try {
-			//marsEcmwfDataServerInfoJson = mapper.writeValueAsString(this.marsEcmwfDataServerInfo);
-			marsParametersJson = mapper.writeValueAsString(marsParameters);
-		} catch (JsonProcessingException e) {
-			throw new MarsClientException("MARS retrieval failed", e);
-		}
-
-		List<String> proccessArgs = new ArrayList<>(Arrays.asList(this.scriptCommand.split(" ")));
-		proccessArgs.add(marsParametersJson);
-
-		//ProcessBuilder processBuilder = new ProcessBuilder(this.scriptCommand, this.scriptFile, marsEcmwfDataServerInfoJson, marsParametersJson);
-		ProcessBuilder processBuilder = new ProcessBuilder(proccessArgs);
-
-		processBuilder.directory(new File(this.targetPath));
-		processBuilder.redirectErrorStream(true);
-		File log = Paths.get(this.targetPath, marsTargetFilename + ".log").toFile();
-		processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(log));
-
-		/*Map<String, String> env = processBuilder.environment();
-		env.entrySet().forEach(entry -> System.out.println(entry.getKey() + " " + entry.getValue()));*/
-
-		try {
-			Process process = processBuilder.start();
-			logger.info("Ready to execute " + proccessArgs.stream().collect(Collectors.joining(" ")));
-
-			/*InputStream log = new BufferedInputStream(process.getInputStream());
-			FileOutputStream logFile = new FileOutputStream(this.targetPath + "/" + marsTargetFilename + ".log");
-			ByteStreams.copy(log, logFile);*/
-
-			int exitValue = process.waitFor();
-			if (exitValue == 0) {
-				logger.info("Execution for target file " + marsTargetFilename + " completed");
-
-				setFilePermissions(marsTargetFilePath);
-
-				Thread rasdamanThread = new Thread(rasdamanRunnable);
-				rasdamanThread.start();
-			}
-		} catch (IOException | InterruptedException e) {
-			throw new MarsClientException("Mars retrieval failed", e);
-		}
-	}
-
-	@Override
-	public void cleanupDebugFiles(String marsTargetFilename) throws MarsClientException {
+	public void cleanupMarsFiles(String marsTargetFilename) throws MarsClientException {
 		if (!this.debug) {
 			try {
 				Files.delete(Paths.get(this.getTargetPath(), marsTargetFilename));
-				Files.delete(Paths.get(this.getTargetPath(), marsTargetFilename + ".log"));
+				//Files.delete(Paths.get(this.getTargetPath(), marsTargetFilename + ".log"));
 			} catch (IOException e) {
 				throw new MarsClientException(e);
 			}

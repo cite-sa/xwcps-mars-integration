@@ -46,7 +46,7 @@ public class XwcpsParserTest {
 
 		errors.forEach(System.out::println);
 
-		String coverageId = visitor.getCoverageId();
+		//String coverageId = visitor.getCoverageId();
 		//System.out.println(mapper.writeValueAsString(marsRequestBuilder.build()));
 
 	}

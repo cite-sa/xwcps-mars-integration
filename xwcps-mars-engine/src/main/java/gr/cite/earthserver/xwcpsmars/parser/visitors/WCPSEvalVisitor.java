@@ -25,7 +25,7 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
 
     private MarsRequestBuilder marsRequestBuilder;
 
-    private String coverageId;
+    //private String coverageId;
     private String formatName;
     private AxisUtils.CoordinatesAggregator coordinatesAggregator;
     private AxisUtils.DateTimeTransformation dateTimeTransformation;
@@ -41,17 +41,17 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
         this.coverageRegistry = coverageRegistry;
     }
 
-    public String getCoverageId() {
-        return this.coverageId;
-    }
+    //public String getCoverageId() {
+    //    return this.coverageId;
+    //}
     
 	public String getFormatName() {
 		return this.formatName;
 	}
 
     @Override public MarsRequestBuilder visitSpecificIdLabel(SpecificIdLabelContext ctx) {
-        this.coverageId = ctx.COVERAGE_VARIABLE_NAME().getText();
-        this.marsRequestBuilder = MarsRequest.builder(this.coverageId);
+        String coverageId = ctx.COVERAGE_VARIABLE_NAME().getText();
+        this.marsRequestBuilder = MarsRequest.builder(coverageId);
         return visitChildren(ctx);
     }
 
@@ -141,7 +141,7 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
                 try {
                     /*rangeSteps = this.coverageRegistry.retrieveAxisDiscreteValues(this.coverageId, axisName).stream()
 							.map(Integer::parseInt).collect(Collectors.toList());*/
-                    rangeSteps = retrieveAxisDiscreteValues(this.coverageId, axisName);
+                    rangeSteps = retrieveAxisDiscreteValues(this.marsRequestBuilder.getCoverageId(), axisName);
                 } catch (CoverageRegistryException e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -166,8 +166,8 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
         if (this.dateTimeTransformation.isDateRange()) {
             AxisUtils.DateTimeUtil dateTimeUtil = new AxisUtils.DateTimeUtil();
             try {
-                dateTimeUtil.parseMarsDateTimeRange(this.coverageRegistry.retrieveAxisOriginPoint(this.coverageId, this.timeAxisName),
-                        this.coverageRegistry.retrieveAxisCoefficients(this.coverageId, this.timeAxisName));
+                dateTimeUtil.parseMarsDateTimeRange(this.coverageRegistry.retrieveAxisOriginPoint(this.marsRequestBuilder.getCoverageId(), this.timeAxisName),
+                        this.coverageRegistry.retrieveAxisCoefficients(this.marsRequestBuilder.getCoverageId(), this.timeAxisName));
             } catch (CoverageRegistryException e) {
                 logger.error(e.getMessage(), e);
             }

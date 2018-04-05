@@ -157,6 +157,10 @@ public class WcsRequestProcessing {
 		return GetCapabilitiesUtil.generateDocument(this.coverageRegistry.getRegisteredCoverageIds());
 	}
 	
+	public String buildDescribeCoverageDocument() throws CoverageRegistryException {
+		return this.coverageRegistry.getDescribeCoverageMetadata(this.coverageId);
+	}
+	
 	public List<WcsRequestProcessingResult> buildMarsRequest() throws CoverageRegistryException {
 		//List<MarsRequestBuilder> marsRequestBuilders = new ArrayList<>();
 		List<WcsRequestProcessingResult> wcsRequestProcessingResults = new ArrayList<>();
@@ -175,8 +179,8 @@ public class WcsRequestProcessing {
 				//marsRequestBuilders.add(processCoveragesMarsRequestBuilder);
 			}
 		} else {
-			this.coverageId = this.getDescribeCoverageRequest.getCoverageId();
-			MarsRequestBuilder getDescribeCoverageMarsRequestBuilder = MarsRequest.builder(this.coverageId);
+			//this.coverageId = this.getDescribeCoverageRequest.getCoverageId();
+			MarsRequestBuilder getDescribeCoverageMarsRequestBuilder = MarsRequest.builder(this.getDescribeCoverageRequest.getCoverageId());
 			
 			List<String> subsets = this.getDescribeCoverageRequest.getSubsets() != null ? this.getDescribeCoverageRequest.getSubsets() : new ArrayList<>();
 			transformWcsToMarsParameters(subsets, getDescribeCoverageMarsRequestBuilder);
@@ -203,6 +207,9 @@ public class WcsRequestProcessing {
 		MarsRequest finalRequest = finalizeMarsRequest(marsRequestBuilder, marsParameters);
 		
 		WcsRequestProcessingResult wcsRequestProcessingResult = new WcsRequestProcessingResult();
+		
+		wcsRequestProcessingResult.setCoverageId(marsRequestBuilder.getCoverageId());
+		
 		wcsRequestProcessingResult.setMarsParameters(marsParameters);
 		wcsRequestProcessingResult.setMarsRequest(finalRequest);
 		
@@ -252,7 +259,7 @@ public class WcsRequestProcessing {
 		wcsRequestProcessingResult.setAxesDirectPositions(axesDirectPositions);
 	}*/
 	
-	private AxisEnvelope generateAxisEnvelope(String axisLabel, Map<String, List<String>> axesRanges) {
+	/*private AxisEnvelope generateAxisEnvelope(String axisLabel, Map<String, List<String>> axesRanges) {
 		AxisEnvelope envelope = null;
 		if (axesRanges.containsKey(axisLabel)) {
 			List<String> bounds = axesRanges.get(axisLabel);
@@ -273,7 +280,7 @@ public class WcsRequestProcessing {
 			}
 		}
 		return envelope;
-	}
+	}*/
 	
 	private MarsRequestBuilder parseProcessCoverageRequest(String processCoveragesRequest) {
 		MarsRequestBuilder marsRequestBuilder;
@@ -285,7 +292,8 @@ public class WcsRequestProcessing {
 		
 		XWCPSEvalVisitor visitor = new XWCPSEvalVisitor(this.coverageRegistry);
 		marsRequestBuilder = visitor.visit(tree);
-		this.coverageId = visitor.getCoverageId();
+		//this.coverageId = visitor.getCoverageId();
+		
 		return marsRequestBuilder;
 	}
 	
@@ -320,8 +328,8 @@ public class WcsRequestProcessing {
 					if (dateTimeTransformation.isDateRange()) {
 						AxisUtils.DateTimeUtil dateTimeUtil = new AxisUtils.DateTimeUtil();
 						dateTimeUtil.parseMarsDateTimeRange(
-								this.coverageRegistry.retrieveAxisOriginPoint(this.coverageId, axisLabel),
-								this.coverageRegistry.retrieveAxisCoefficients(this.coverageId, axisLabel));
+								this.coverageRegistry.retrieveAxisOriginPoint(marsRequestBuilder.getCoverageId(), axisLabel),
+								this.coverageRegistry.retrieveAxisCoefficients(marsRequestBuilder.getCoverageId(), axisLabel));
 						marsRequestBuilder.time(dateTimeUtil.buildMarsRequestTimeSteps());
 						
 					} else {
@@ -332,7 +340,7 @@ public class WcsRequestProcessing {
 						logger.debug(axisLabel + " subset [" + subsetRange.get(0) + "]");
 						marsRequestBuilder.mapAxisNameToMarsField(axisLabel, Collections.singletonList(subsetRange.get(0)));
 					} else {
-						List<Double> rangeSteps = retrieveAxisDiscreteValues(this.coverageId, axisLabel);
+						List<Double> rangeSteps = retrieveAxisDiscreteValues(marsRequestBuilder.getCoverageId(), axisLabel);
 						
 						logger.debug("Initial range [" + rangeSteps.stream().map(Object::toString).collect(Collectors.joining(",")) + "]");
 						
@@ -386,10 +394,10 @@ public class WcsRequestProcessing {
 		if (marsRequest.getDate() == null || marsRequest.getDate().trim().isEmpty()) {
 			logger.debug("MARS request date is empty");
 			
-			String origin = this.coverageRegistry.retrieveAxisOriginPoint(this.coverageId, WcsRequestProcessing.DATE_TIME_AXIS);
+			String origin = this.coverageRegistry.retrieveAxisOriginPoint(marsRequestBuilder.getCoverageId(), WcsRequestProcessing.DATE_TIME_AXIS);
 			logger.debug("Origin [" + origin + "]");
 			
-			List<String> coefficients = this.coverageRegistry.retrieveAxisCoefficients(this.coverageId, WcsRequestProcessing.DATE_TIME_AXIS);
+			List<String> coefficients = this.coverageRegistry.retrieveAxisCoefficients(marsRequestBuilder.getCoverageId(), WcsRequestProcessing.DATE_TIME_AXIS);
 			//logger.debug("Coefficients [" + coefficients + "]");
 			
 			AxisUtils.DateTimeUtil dateTimeUtil = new AxisUtils.DateTimeUtil();
@@ -399,7 +407,7 @@ public class WcsRequestProcessing {
 		}
 		
 		if (marsRequest.getArea() == null || marsRequest.getArea().trim().isEmpty()) {
-			CoordinatesEnvelope envelope = this.coverageRegistry.retrieveCoordinatesEnvelope(this.coverageId);
+			CoordinatesEnvelope envelope = this.coverageRegistry.retrieveCoordinatesEnvelope(marsRequestBuilder.getCoverageId());
 			marsRequest.setArea(envelope.getMaxLat() + "/" + envelope.getMinLong() + "/" + envelope.getMinLat() + "/" + envelope.getMaxLong());
 		}
 		

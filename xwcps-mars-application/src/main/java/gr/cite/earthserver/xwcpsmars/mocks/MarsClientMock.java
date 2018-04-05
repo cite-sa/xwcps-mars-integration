@@ -94,7 +94,7 @@ public class MarsClientMock implements MarsClientAPI {
 	}
 
 	@Override
-	public void cleanupDebugFiles(String marsTargetFilename) throws MarsClientException {
+	public void cleanupMarsFiles(String marsTargetFilename) throws MarsClientException {
 
 	}
 

@@ -4,6 +4,8 @@ gr.cite.earthserver.xwcpsmars.debug.deleteIngestedCoverage=true
 
 gr.cite.earthserver.xwcpsmars.hostname=http://localhost:8080/xwcps-mars
 
+gr.cite.earthserver.xwcpsmars.monitoring.history.max=20
+
 gr.cite.earthserver.xwcpsmars.mars.client.script.command=env http_proxy=http://proxy.ecmwf.int:3333 https_proxy=http://proxy.ecmwf.int:3333 no_proxy=127.0.0.1 python /home/deploy/data/xwcps-mars/mars/mars_retrieve.py
 gr.cite.earthserver.xwcpsmars.mars.target.path=/home/deploy/data/xwcps-mars/mars/responses
 

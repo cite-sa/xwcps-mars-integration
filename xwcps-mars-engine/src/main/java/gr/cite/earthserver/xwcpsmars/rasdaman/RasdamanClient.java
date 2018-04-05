@@ -18,6 +18,7 @@ import javax.inject.Inject;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.xml.xpath.XPathFactoryConfigurationException;
@@ -50,8 +51,8 @@ public class RasdamanClient implements RasdamanClientAPI {
 	private static final String GMLCOV_METADATA_OPENING_TAG = "<gmlcov:metadata>";
 	private static final String GMLCOV_METADATA_CLOSING_TAG = "</gmlcov:metadata>";
 	
-	//private String endpoint;
 	private String baseEndpoint;
+	private String endpoint;
 	private String scriptCommand;
 	
 	private String ingredientTemplatePath;
@@ -73,6 +74,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 						  String registrationPath, String ingestionPath, String responsePath,
 						  boolean debug, boolean deleteIngestedCoverage) throws IOException {
 		this.baseEndpoint = baseEndpoint;
+		this.endpoint = endpoint;
 		this.scriptCommand = scriptCommand;
 		this.ingredientTemplatePath = ingredientTemplatePath;
 		this.ingredientTemplateFileNameSuffix = ingredientTemplateFileNameSuffix;
@@ -354,7 +356,7 @@ public class RasdamanClient implements RasdamanClientAPI {
 		return response;
 	}
 	
-	private Invocation buildWcsRequest(String wcsRequest, WebTarget rasdamanWebTarget) {
+	private Invocation buildWcsRequest(String wcsRequest, WebTarget rasdamanWebTarget) throws RasdamanException {
 		WebTarget tempRasdamanWebTarget = rasdamanWebTarget;
 		wcsRequest = wcsRequest.startsWith("&") ? wcsRequest.substring(1, wcsRequest.length()) : wcsRequest;
 		
@@ -367,19 +369,11 @@ public class RasdamanClient implements RasdamanClientAPI {
 	}
 	
 	private RasdamanResponse readAndStoreRasdamanResponse(Response rasdamanResponse, String rasdamanResponseFilename) throws RasdamanException {
-		/*String entity = rasdamanResponse.readEntity(String.class);
-		try {
-			Files.write(Paths.get(this.responsePath, rasdamanResponseFilename), Collections.singletonList(entity));
-		} catch (IOException e) {
-			throw new RasdamanException("[" + rasdamanResponseFilename + "] WCS request response storing in " + rasdamanResponseFilename + " failed", e);
-		}
-		return entity;*/
-		
 		RasdamanResponse responseToStore = new RasdamanResponse();
 		try {
 			byte[] bytes = ByteStreams.toByteArray(rasdamanResponse.readEntity(InputStream.class));
 			
-			responseToStore.setContentType(rasdamanResponse.getHeaderString("Content-Type"));
+			responseToStore.setContentType(rasdamanResponse.getHeaderString(HttpHeaders.CONTENT_TYPE));
 			responseToStore.setEntity(bytes);
 		
 			File responseFile = Files.createFile(Paths.get(this.responsePath, rasdamanResponseFilename)).toFile();

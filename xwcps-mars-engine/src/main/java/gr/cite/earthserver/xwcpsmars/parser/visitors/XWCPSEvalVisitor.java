@@ -17,9 +17,9 @@ public class XWCPSEvalVisitor extends WCPSEvalVisitor {
         super(coverageRegistry);
     }
 
-    public String getCoverageId() {
+    /*public String getCoverageId() {
         return super.getCoverageId();
-    }
+    }*/
 
     @Override
     public MarsRequestBuilder visitXwcps(XwcpsContext ctx) {
