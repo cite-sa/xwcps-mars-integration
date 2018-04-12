@@ -1,42 +1,103 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-	xmlns:context="http://www.springframework.org/schema/context"
-	xmlns:tx="http://www.springframework.org/schema/tx"	
-	xsi:schemaLocation="http://www.springframework.org/schema/beans	
-		http://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/tx 
-		http://www.springframework.org/schema/tx/spring-tx.xsd
-		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context.xsd">
-   
-	<context:property-placeholder location="WEB-INF/xwcps-mars.properties.prod" />
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+
+	<context:property-placeholder location="WEB-INF/xwcps-mars.properties.earthserver2e"/>
+
+	<!--<bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager" p:cache-manager-ref="ehcache"/>
+	<bean id="ehcache" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" p:config-location="ehcache.xml"/>-->
+
+	<!--<bean id="cacheManager" class="org.springframework.cache.jcache.JCacheCacheManager" p:cache-manager-ref="jCacheManager"/>
+	<bean id="jCacheManager" class="org.springframework.cache.jcache.JCacheManagerFactoryBean">
+		<property name="cacheManagerUri" value="classpath:ehcache.xml"/>
+	</bean>
+	<bean id="myCacheManager" class="org.springframework.cache.jcache.JCacheCacheManager">
+		<property name="cacheManager" ref="jCacheManager" />
+	</bean>-->
+
+	<!--<bean class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean">
+		<property name="featuresToDisable">
+			<array>
+				<util:constant static-field="com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS"/>
+			</array>
+		</property>
+	</bean>-->
+
+	<bean id="wcsAdapter" class="gr.cite.earthserver.wcs.adapter.WCSAdapter">
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.femme.endpoint}"/>
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.indexModeOn} "/>
+	</bean>
+	<bean id="xwcpsQueryParser" name="xwcpsQueryParser" class="gr.cite.earthserver.wcps.parser.XWCPSQueryParser">
+		<constructor-arg ref="wcsAdapter"/>
+	</bean>
+
+	<bean id="femmeClient" class="gr.cite.femme.client.FemmeClient">
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.femme.endpoint}"/>
+	</bean>
+	<bean id="coverageRegistry" class="gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry">
+		<constructor-arg ref="femmeClient"/>
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.registry.collection.endpoint} "/>
+		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.registry.coverage.endpoint} "/>
+	</bean>
 
 	<bean id="marsClient" class="gr.cite.earthserver.xwcpsmars.mars.MarsClient">
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.url}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.key}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.ecmwfdataserver.email}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.client.script.command}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.client.script.file}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.mars.target.path}" />
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.mars.client.script.command}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.mars.target.path}"/>
+		<constructor-arg type="boolean" value="${gr.cite.earthserver.xwcpsmars.debug}"/>
 	</bean>
 
 	<bean id="rasdamanClient" class="gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient">
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.command}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.file}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.path}" />
-		<constructor-arg value="${gr.cite.earthserver.xwcpsmars.rasdaman.response.path}" />
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint.base}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.endpoint}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.script.command}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.path}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingredients.template.suffix}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.registration.path}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.ingestion.path}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.rasdaman.response.path}"/>
+		<constructor-arg type="boolean" value="${gr.cite.earthserver.xwcpsmars.debug}"/>
+		<constructor-arg type="boolean" value="${gr.cite.earthserver.xwcpsmars.debug.deleteIngestedCoverage}"/>
 	</bean>
 
-	<bean id="rasdamanConnector" class="gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanConnector">
+	<bean id="requestMonitoring" class="gr.cite.earthserver.xwcpsmars.application.request.RequestMonitoring">
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.hostname}"/>
+		<constructor-arg type="java.lang.Integer" value="${gr.cite.earthserver.xwcpsmars.monitoring.history.max}"/>
+	</bean>
+
+	<bean id="logStatisticsResource" class="gr.cite.earthserver.xwcpsmars.application.resources.LogReportingResource">
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.logs.path.base}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.logs.path.subdirectory}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.logs.prefix}"/>
+	</bean>
+
+
+	<!--<bean id="integrationResource" class="gr.cite.earthserver.xwcpsmars.application.resources.IntegrationResource">
+		<constructor-arg ref="marsClient"/>
+		<constructor-arg ref="rasdamanClient"/>
+		<constructor-arg ref="coverageRegistry"/>
+		<constructor-arg ref="xwcpsQueryParser"/>
+		<constructor-arg ref="requestMonitoring"/>
+	</bean>
+	<bean id="parserResource" class="gr.cite.earthserver.xwcpsmars.application.resources.ParserResource">
+		<constructor-arg ref="coverageRegistry"/>
+		<constructor-arg ref="xwcpsQueryParser"/>
+	</bean>
+	<bean id="marsResource" class="gr.cite.earthserver.xwcpsmars.application.resources.MarsResource">
+		<constructor-arg ref="marsClient"/>
+	</bean>
+	<bean id="rasdamanResource" class="gr.cite.earthserver.xwcpsmars.application.resources.RasdamanResource">
 		<constructor-arg ref="rasdamanClient"/>
 	</bean>
+	<bean id="registryResource" class="gr.cite.earthserver.xwcpsmars.application.resources.CoverageRegistryResource">
+		<constructor-arg ref="coverageRegistry"/>
+		<constructor-arg ref="rasdamanClient"/>
+	</bean>-->
 
-	<bean id="xwcpsMarsResource" class="gr.cite.earthserver.xwcpsmars.application.resources.XwcpsMarsResource">
-		<constructor-arg ref="marsClient"/>
-		<constructor-arg ref="rasdamanConnector"/>
-	</bean>
-
+	<!-- <cache:annotation-driven /> -->
 	<context:annotation-config/>
-	<context:component-scan base-package="gr.cite.earthserver.xwcpsmars.application" />
+	<context:component-scan base-package="gr.cite.earthserver.xwcpsmars"/>
+
 </beans>

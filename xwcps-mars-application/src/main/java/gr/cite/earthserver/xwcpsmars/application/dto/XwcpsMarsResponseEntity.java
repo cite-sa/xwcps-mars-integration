@@ -4,29 +4,39 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.net.URI;
+
 @JsonInclude(Include.NON_EMPTY)
 public class XwcpsMarsResponseEntity<T> {
-	
-	@JsonProperty
-	private String href;
-	
-	@JsonProperty
+
+	@JsonProperty("href")
+	private URI href;
+
+	@JsonProperty("body")
 	private T body;
-	
+
 	public XwcpsMarsResponseEntity() {
-		
+
 	}
-	
-	public XwcpsMarsResponseEntity(String href, T body) {
+
+	public XwcpsMarsResponseEntity(URI href) {
+		this.href = href;
+	}
+
+	public XwcpsMarsResponseEntity(T body) {
+		this.body = body;
+	}
+
+	public XwcpsMarsResponseEntity(URI href, T body) {
 		this.href = href;
 		this.body = body;
 	}
 
-	public String getHref() {
+	public URI getHref() {
 		return href;
 	}
 
-	public XwcpsMarsResponseEntity<T> setHref(String href) {
+	public XwcpsMarsResponseEntity<T> setHref(URI href) {
 		this.href = href;
 		return this;
 	}

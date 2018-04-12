@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
+@Deprecated
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class XwcpsMarsMappings {
 

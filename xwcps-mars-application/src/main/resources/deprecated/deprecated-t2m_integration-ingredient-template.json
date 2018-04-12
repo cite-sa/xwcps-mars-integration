@@ -1,0 +1,79 @@
+{
+  "config": {
+    "service_url": "$$RASDAMAN_BASE_URL_PLACEHOLDER$$/rasdaman/ows",
+    "tmp_directory": "/tmp/",
+    "crs_resolver": "$$RASDAMAN_BASE_URL_PLACEHOLDER$$/def/",
+    "default_crs": "$$RASDAMAN_BASE_URL_PLACEHOLDER$$/def/OGC/0/Index2D",
+    "mock": false,
+    "automated": true,
+    "retry": true,
+    "retries": 1,
+    "track_files": false,
+    "subset_correction": false,
+    "insitu": true
+  },
+  "input": {
+    "coverage_id": "$$COVERAGE_ID_PLACEHOLDER$$",
+    "paths": [
+      "$$COVERAGE_FILE_PLACEHOLDER$$"
+    ]
+  },
+  "recipe": {
+    "name": "general_coverage",
+    "options": {
+      "coverage": {
+        "crs": "EPSG/0/4326@OGC/0/AnsiDate?axis-label=\"reftime\"",
+        "metadata": {
+          "type": "json",
+          "global": {
+            "Originating_or_generating_Center": "'${grib:centreDescription}'",
+            "GRIB_table_version": "'${grib:marsParam}'",
+            "Grib1_Parameter_name": "'${grib:parameterName}'",
+            "Grib1_Parameter_id": "'${grib:paramId}'",
+            "MARS type": "'${grib:marsType}'",
+            "Type of level": "'${grib:typeOfLevel}'",
+            "stream": "\"oper\""
+          }
+        },
+        "slicer": {
+          "type": "grib",
+          "pixelIsPoint": true,
+          "bands": [
+            {
+              "name": "ERA-interim Temperature@Surface",
+              "identifier": "'${grib:cfVarName}'",
+              "description": "'${grib:marsClass}'",
+              "nilReason": "Nil value represents missing values.",
+              "nilValue": "'${grib:missingValue}'"
+            }
+          ],
+          "axes": {
+            "reftime": {
+              "min": "grib_datetime(${grib:dataDate}, ${grib:dataTime})",
+              "gridOrder": 0,
+              "type": "ansidate",
+              "irregular": true,
+              "directPositions": "${grib:axis:reftime}",
+              "dataBound" : true
+            },
+            "Long": {
+              "min": "${grib:longitudeOfFirstGridPointInDegrees}",
+              "max": "${grib:longitudeOfLastGridPointInDegrees}",
+              "gridOrder": 1,
+              "dataBound" : true,
+              "resolution": "-${grib:iDirectionIncrementInDegrees} if bool(${grib:iScansNegatively}) else ${grib:iDirectionIncrementInDegrees}"
+            },
+            "Lat": {
+              "min": "${grib:latitudeOfLastGridPointInDegrees}",
+              "max": "${grib:latitudeOfFirstGridPointInDegrees}",
+              "gridOrder": 2,
+              "dataBound" : true,
+              "resolution": "${grib:jDirectionIncrementInDegrees} if bool(${grib:jScansPositively}) else -${grib:jDirectionIncrementInDegrees}"
+            }
+          }
+        }
+      },
+      "tiling": "ALIGNED [0:0, 0:180, 0:90]"
+    }
+  }
+}

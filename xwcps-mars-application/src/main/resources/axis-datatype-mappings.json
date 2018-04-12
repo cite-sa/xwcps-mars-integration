@@ -1,0 +1,16 @@
+{
+  "axes": [
+    {
+      "labels": ["Lat", "Long", "lon", "E", "N"],
+      "datatype": "double"
+    },
+    {
+      "labels": ["reftime", "ansi"],
+      "datatype": "datetime"
+    },
+    {
+      "labels": ["forecaststep", "step"],
+      "datatype": "integer"
+    }
+  ]
+}
