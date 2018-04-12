@@ -36,10 +36,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
-@Path("statistics")
+@Path("reporting")
 @Produces(MediaType.APPLICATION_JSON)
-public class LogStatisticsResource {
-	private static final Logger logger = LoggerFactory.getLogger(LogStatisticsResource.class);
+public class LogReportingResource {
+	private static final Logger logger = LoggerFactory.getLogger(LogReportingResource.class);
 	
 	private enum RequestStep {
 		NONE, OTHER, QUERY_TRANSLATION_EXECUTION_TIME, MARS_REQUEST, MARS_REQUEST_EXECUTION_TIME, RASDAMAN_REGISTRATION_EXECUTION_TIME, WCS_REQUEST, WCS_REQUEST_EXECUTION_TIME
@@ -60,7 +60,7 @@ public class LogStatisticsResource {
 	private String logsPrefix;
 	
 	@Inject
-	public LogStatisticsResource(String logsBasePath, String logsSubDirectory, String logsPrefix) {
+	public LogReportingResource(String logsBasePath, String logsSubDirectory, String logsPrefix) {
 		this.logsBasePath = logsBasePath;
 		this.logsSubDirectory = logsSubDirectory;
 		this.logsPrefix = logsPrefix;
