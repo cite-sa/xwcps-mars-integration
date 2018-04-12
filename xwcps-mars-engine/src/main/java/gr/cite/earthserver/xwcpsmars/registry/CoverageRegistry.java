@@ -170,7 +170,7 @@ public class CoverageRegistry {
 			throw new CoverageRegistryException(e.getMessage(), e);
 		}
 		
-		logger.debug(value);
+		//logger.debug(value);
 		
 		value = value.substring(value.indexOf("<gmlcov:metadata>"), (value.indexOf("</gmlcov:rangeType>") + "</gmlcov:rangeType>".length()));
 		

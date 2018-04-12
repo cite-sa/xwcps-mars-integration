@@ -21,3 +21,7 @@ gr.cite.earthserver.xwcpsmars.rasdaman.response.path=/home/deploy/data/xwcps-mar
 gr.cite.earthserver.xwcpsmars.femme.endpoint=http://localhost:8081/femme
 gr.cite.earthserver.xwcpsmars.registry.collection.endpoint=http://localhost:8080/rasdaman/ows
 gr.cite.earthserver.xwcpsmars.registry.coverage.endpoint=http://localhost:8080/rasdaman/ows
+
+gr.cite.earthserver.xwcpsmars.logs.path.base=/opt/apache-tomcat/logs
+gr.cite.earthserver.xwcpsmars.logs.path.subdirectory=archived
+gr.cite.earthserver.xwcpsmars.logs.prefix=xwcps-mars

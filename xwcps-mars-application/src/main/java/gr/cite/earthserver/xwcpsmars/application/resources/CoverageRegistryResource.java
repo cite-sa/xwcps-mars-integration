@@ -20,6 +20,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+@Component
 @Path("registry")
 public class CoverageRegistryResource {
 	private static final Logger logger = LoggerFactory.getLogger(CoverageRegistryResource.class);

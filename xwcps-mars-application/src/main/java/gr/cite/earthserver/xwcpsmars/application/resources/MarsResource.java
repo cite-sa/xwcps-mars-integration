@@ -19,6 +19,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.nio.file.Paths;
 
+@Component
 @Path("mars")
 public class MarsResource {
 	private static final Logger logger = LoggerFactory.getLogger(MarsResource.class);

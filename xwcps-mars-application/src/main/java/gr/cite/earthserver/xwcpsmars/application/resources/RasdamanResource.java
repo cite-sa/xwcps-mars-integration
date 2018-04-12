@@ -18,6 +18,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
 
+@Component
 @Path("rasdaman")
 public class RasdamanResource {
 	private static final Logger logger = LoggerFactory.getLogger(RasdamanResource.class);

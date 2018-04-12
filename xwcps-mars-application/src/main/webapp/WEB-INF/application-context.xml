@@ -70,6 +70,12 @@
 		<constructor-arg type="java.lang.Integer" value="${gr.cite.earthserver.xwcpsmars.monitoring.history.max}"/>
 	</bean>
 
+	<bean id="logStatisticsResource" class="gr.cite.earthserver.xwcpsmars.application.resources.LogStatisticsResource">
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.logs.path.base}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.logs.path.subdirectory}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.logs.prefix}"/>
+	</bean>
+
 
 	<!--<bean id="integrationResource" class="gr.cite.earthserver.xwcpsmars.application.resources.IntegrationResource">
 		<constructor-arg ref="marsClient"/>

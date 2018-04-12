@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
+@Component
 @Path("parser")
 public class ParserResource {
 	private static final Logger logger = LoggerFactory.getLogger(ParserResource.class);

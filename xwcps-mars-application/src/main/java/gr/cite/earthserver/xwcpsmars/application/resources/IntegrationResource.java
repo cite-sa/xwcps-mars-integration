@@ -23,6 +23,7 @@ import gr.cite.earthserver.xwcpsmars.utils.WcsRequestProcessing;
 import gr.cite.earthserver.xwcpsmars.wcs.core.WcsRequestProcessingResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
@@ -41,11 +42,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+@Component
 @Path("integration")
 @Produces(MediaType.APPLICATION_JSON)
 public class IntegrationResource {

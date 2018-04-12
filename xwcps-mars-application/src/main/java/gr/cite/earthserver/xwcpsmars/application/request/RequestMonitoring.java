@@ -10,6 +10,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -26,14 +27,27 @@ public class RequestMonitoring {
 		this.maxHistory = maxHistory;
 	}
 	
-	public Map<String, RequestInfo> getRequests() {
-		return this.requests;
+	public List<RequestInfo> getRequests() {
+		return this.requests.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toList());
 	}
 	
-	public Map<String, RequestInfo> getRequests(RequestStatus status) {
-		return this.requests.entrySet().stream()
-					   .filter(idAndRequestInfo -> idAndRequestInfo.getValue().getStatus() == status)
-					   .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+	public List<RequestInfo> getRequests(boolean sorted) {
+		List<RequestInfo> requests = getRequests();
+		return sorted ? sortRequests(requests) : requests;
+	}
+	
+	public List<RequestInfo> getRequests(RequestStatus status) {
+		if (status == null) return getRequests();
+		return this.requests.entrySet().stream().map(Map.Entry::getValue).filter(requestInfo -> requestInfo.getStatus() == status).collect(Collectors.toList());
+	}
+	
+	public List<RequestInfo> getRequests(RequestStatus status, boolean sorted) {
+		List<RequestInfo> requests = getRequests(status);
+		return sorted ? sortRequests(requests) : requests;
+	}
+	
+	private List<RequestInfo> sortRequests(List<RequestInfo> requests) {
+		return requests.stream().sorted(Comparator.comparing(RequestInfo::getStartTime).reversed()).collect(Collectors.toList());
 	}
 	
 	public RequestInfo getRequest(String requestId) {
