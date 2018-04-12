@@ -1,0 +1,62 @@
+<div class="spinner-container" *ngIf="requestsDataSource.loading$ | async">
+        <mat-progress-spinner color="primary"></mat-progress-spinner>
+</div>
+<mat-table [dataSource]="requestsDataSource">
+	<ng-container matColumnDef="id">
+		<mat-header-cell *matHeaderCellDef>ID</mat-header-cell>
+		<mat-cell *matCellDef="let request">{{ request.id }}</mat-cell>
+	</ng-container>
+	<ng-container matColumnDef="status">
+		<mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
+		<mat-cell *matCellDef="let request">{{ request.status }}</mat-cell>
+	</ng-container>
+	<ng-container matColumnDef="startTime">
+		<mat-header-cell *matHeaderCellDef>Start Time</mat-header-cell>
+		<mat-cell *matCellDef="let request">{{ request.startTime }}</mat-cell>
+	</ng-container>
+	<ng-container matColumnDef="endTime">
+		<mat-header-cell *matHeaderCellDef>End Time</mat-header-cell>
+		<mat-cell *matCellDef="let request">{{ request.endTime }}</mat-cell>
+	</ng-container>
+	<ng-container matColumnDef="deleteRequest">
+			<mat-header-cell *matHeaderCellDef>Delete</mat-header-cell>
+			<mat-cell *matCellDef="let request">
+				<button mat-icon-button [disabled]="hasStatusProcessing(request)" (click)="deleteRequest(request.id, $event)">
+					<mat-icon>delete</mat-icon>
+				</button>
+			</mat-cell>
+		</ng-container>
+	<ng-container matColumnDef="expandedDetail">
+		<mat-cell *matCellDef="let detail">
+				<a href='{{ detail.request.polling}}'  target="_blank">Check for the response</a>
+				<mat-grid-list cols="3" rowHeight="2:1" class="details-list">
+					<mat-grid-tile>
+						<mat-grid-tile-header>MARS Request</mat-grid-tile-header>
+						{{ detail.request.marsRequest | json }}
+					</mat-grid-tile>
+					<mat-grid-tile>
+							<mat-grid-tile-header>WCS Request</mat-grid-tile-header>
+							{{ detail.request.wcsRequest }}
+						</mat-grid-tile>
+						<mat-grid-tile>
+								<mat-grid-tile-header>Timings</mat-grid-tile-header>
+								{{ detail.request.timings | json }}
+							</mat-grid-tile>
+				</mat-grid-list>
+		</mat-cell>
+		<!-- attr.data-id="{{ row.id }}" -->
+	  </ng-container>
+
+	<mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+	<!-- <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row> -->
+	<mat-row *matRowDef="let row; columns: displayedColumns;"
+			matRipple
+			class="element-row"
+			[class.expanded]="expandedElement == row"
+			(click)="expandedElement = row">
+	</mat-row>
+	<mat-row *matRowDef="let row; columns: ['expandedDetail']; when: isExpansionDetailRow"
+			[@detailExpand]="row.request == expandedElement ? 'expanded' : 'collapsed'"
+			style="overflow: hidden">
+	</mat-row>
+</mat-table>
