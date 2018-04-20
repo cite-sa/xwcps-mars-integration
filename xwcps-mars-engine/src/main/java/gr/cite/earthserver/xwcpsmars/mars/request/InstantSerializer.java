@@ -1,4 +1,4 @@
-package gr.cite.earthserver.xwcpsmars.application.request;
+package gr.cite.earthserver.xwcpsmars.mars.request;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -10,7 +10,7 @@ import java.time.Instant;
 
 public class InstantSerializer extends JsonSerializer<Instant> {
 	@Override
-	public void serialize(Instant instant, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+	public void serialize(Instant instant, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
 		jsonGenerator.writeString(instant.toString());
 	}
 }

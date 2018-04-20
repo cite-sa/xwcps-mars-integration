@@ -7,6 +7,7 @@ import gr.cite.commons.utils.xml.XMLConverter;
 import gr.cite.commons.utils.xml.XPathEvaluator;
 import gr.cite.commons.utils.xml.exceptions.XMLConversionException;
 import gr.cite.commons.utils.xml.exceptions.XPathEvaluationException;
+import gr.cite.earthserver.xwcpsmars.exceptions.RasdamanException;
 import gr.cite.earthserver.xwcpsmars.wcs.core.WCSRequest;
 import gr.cite.earthserver.xwcpsmars.wcs.core.WCSRequestBuilder;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
@@ -208,13 +209,13 @@ public class RasdamanClient implements RasdamanClientAPI {
 		
 		try {
 			logger.info("[" + ingredientFilePath.getFileName().toString() + "] Rasdaman ingestion [" + proccessArgs.stream().collect(Collectors.joining(" ")) + "]");
-			long ingestionStart = System.currentTimeMillis();
+			//long ingestionStart = System.currentTimeMillis();
 			
 			Process process = processBuilder.start();
 			int exitValue = process.waitFor();
 			
-			long ingestionEnd = System.currentTimeMillis();
-			logger.info("[" + ingredientFilePath.getFileName().toString() + "] Rasdaman ingestion execution time [" + (ingestionEnd - ingestionStart) + " ms]");
+			//long ingestionEnd = System.currentTimeMillis();
+			//logger.info("[" + ingredientFilePath.getFileName().toString() + "] Rasdaman ingestion execution time [" + (ingestionEnd - ingestionStart) + " ms]");
 			
 			if (exitValue != 0) {
 				throw new RasdamanException("Rasdaman ingestion failed. See " + logFilePath.toString());
@@ -335,13 +336,12 @@ public class RasdamanClient implements RasdamanClientAPI {
 		wcsRequest = wcsRequest.replace(coverageId, generateTempCoverageId(coverageId, rasdamanResponseFilename));
 		Invocation rasdamanWcsRequest = buildWcsRequest(wcsRequest, this.webTarget);
 		
-		logger.debug(loggingIdMsg + "WCS request [" + wcsRequest + "]");
-		logger.debug(loggingIdMsg + "WCS request [" + rasdamanWcsRequest.toString() + "]");
+		logger.info(loggingIdMsg + "WCS request [" + wcsRequest + "]");
 		
-		long queryStart = System.currentTimeMillis();
+		//long queryStart = System.currentTimeMillis();
 		Response rasdamanResponse = rasdamanWcsRequest.invoke();
-		long queryEnd = System.currentTimeMillis();
-		logger.info(loggingIdMsg + "WCS request execution time [" + (queryEnd - queryStart) + " ms]");
+		//long queryEnd = System.currentTimeMillis();
+		//logger.info(loggingIdMsg + "WCS request execution time [" + (queryEnd - queryStart) + " ms]");
 		
 		RasdamanResponse response = readAndStoreRasdamanResponse(rasdamanResponse, rasdamanResponseFilename);
 		

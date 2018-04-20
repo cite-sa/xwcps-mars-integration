@@ -2,9 +2,9 @@ package gr.cite.earthserver.xwcpsmars.application.resources;
 
 import gr.cite.earthserver.xwcpsmars.application.dto.XwcpsMarsResponse;
 import gr.cite.earthserver.xwcpsmars.application.dto.XwcpsMarsResponseEntity;
-import gr.cite.earthserver.xwcpsmars.application.request.RequestInfo;
-import gr.cite.earthserver.xwcpsmars.application.request.RequestInfo.RequestStatus;
-import gr.cite.earthserver.xwcpsmars.application.request.RequestMonitoring;
+import gr.cite.earthserver.xwcpsmars.mars.request.RequestInfo;
+import gr.cite.earthserver.xwcpsmars.mars.request.RequestInfo.RequestStatus;
+import gr.cite.earthserver.xwcpsmars.mars.request.RequestMonitoring;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

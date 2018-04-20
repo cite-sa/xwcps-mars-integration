@@ -1,12 +1,11 @@
 package gr.cite.earthserver.xwcpsmars.parser.visitors;
 
-import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser.*;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
 import gr.cite.earthserver.xwcpsmars.utils.AxisUtils;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest.MarsRequestBuilder;
-import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
+import gr.cite.earthserver.xwcpsmars.exceptions.CoverageRegistryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,7 +152,7 @@ public abstract class WCPSEvalVisitor extends XWCPSParseTreeVisitor {
     }
 
     private List<Double> retrieveAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {
-        Integer origin = Integer.parseInt(this.coverageRegistry.retrieveAxisOriginPoint(coverageId, axisName));
+        Double origin = Double.parseDouble(this.coverageRegistry.retrieveAxisOriginPoint(coverageId, axisName));
         List<String> coefficients = this.coverageRegistry.retrieveAxisCoefficients(coverageId, axisName);
 
         return coefficients.stream().map(Double::parseDouble).map(coefficient -> origin + coefficient).collect(Collectors.toList());

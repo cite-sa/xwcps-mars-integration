@@ -3,6 +3,7 @@ package gr.cite.earthserver.xwcpsmars.registry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.cite.earthserver.xwcpsmars.exceptions.CoverageRegistryException;
 import gr.cite.earthserver.xwcpsmars.utils.AxisEnvelope;
 import gr.cite.earthserver.xwcpsmars.utils.CoordinatesEnvelope;
 import gr.cite.femme.client.FemmeClientException;
@@ -27,7 +28,6 @@ public class CoverageRegistry {
 	
 	private static final String COVERAGE_ID_PLACEHOLDER = "$$COVERAGE_ID_PLACEHOLDER$$";
 	private static final String AXIS_NAME_PLACEHOLDER = "$$AXIS_NAME_PLACEHOLDER$$";
-	
 	
 	/*private static final String COVERAGE_METADATA_XPATH = "/gmlcov:ReferenceableGridCoverage[@gml:id='$$COVERAGE_ID_PLACEHOLDER$$']/gmlcov:metadata/text()";
 	

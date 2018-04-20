@@ -1,4 +1,4 @@
-package gr.cite.earthserver.xwcpsmars.rasdaman;
+package gr.cite.earthserver.xwcpsmars.exceptions;
 
 public class RasdamanException extends Exception {
 

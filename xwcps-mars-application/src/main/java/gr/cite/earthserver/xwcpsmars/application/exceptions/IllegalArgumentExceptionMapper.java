@@ -22,8 +22,8 @@ public class IllegalArgumentExceptionMapper implements ExceptionMapper<IllegalAr
 		response.setStatus(Response.Status.BAD_REQUEST.getStatusCode());
 		response.setMessage(exception.getMessage());
 		
-		/*if (exception.getCause() != null) {
-			response.setDeveloperMessage(exception.getCause().getMessage());
+		/*if (exceptions.getCause() != null) {
+			response.setDeveloperMessage(exceptions.getCause().getMessage());
 		}*/
 		
 		return Response.status(response.getStatus()).entity(response).type(MediaType.APPLICATION_JSON).build();

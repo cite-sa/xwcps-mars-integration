@@ -34,7 +34,8 @@ http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
 		</init-param>
 		<init-param>
 			<param-name>jersey.config.server.provider.packages</param-name>
-			<param-value>gr.cite.earthserver.xwcpsmars.application.resources</param-value>
+			<param-value>gr.cite.earthserver.xwcpsmars.application</param-value>
+			<!--<param-value>gr.cite.earthserver.xwcpsmars.application.exceptions</param-value>-->
 		</init-param>
 		<init-param>
 			<param-name>jersey.config.server.provider.classnames</param-name>

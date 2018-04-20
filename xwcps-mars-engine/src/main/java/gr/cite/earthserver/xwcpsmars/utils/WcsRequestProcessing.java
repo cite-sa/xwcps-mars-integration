@@ -1,7 +1,9 @@
 package gr.cite.earthserver.xwcpsmars.utils;
 
+import com.google.common.base.Strings;
 import gr.cite.earthserver.wcps.parser.XWCPSQueryParser;
 import gr.cite.earthserver.wcps.parser.evaluation.Query;
+import gr.cite.earthserver.xwcpsmars.exceptions.QueryTranslationException;
 import gr.cite.earthserver.xwcpsmars.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSLexer;
 import gr.cite.earthserver.xwcpsmars.grammar.XWCPSParser;
@@ -11,7 +13,7 @@ import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest.MarsRequestBuilder;
 import gr.cite.earthserver.xwcpsmars.parser.visitors.XWCPSEvalVisitor;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
-import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
+import gr.cite.earthserver.xwcpsmars.exceptions.CoverageRegistryException;
 import gr.cite.femme.core.utils.Pair;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -24,10 +26,11 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class WcsRequestProcessing {
@@ -48,6 +51,22 @@ public class WcsRequestProcessing {
 	private static final String COVERAGE_ID = "coverageid";
 	private static final String SUBSET = "subset";
 	private static final String QUERY = "query";
+	
+	
+	private static final String AXIS_LABEL_GROUP = "axisLabel";
+	private static final String AXIS_LABEL_REGEXP = "[a-zA-Z]+";
+	
+	private static final String DATE_FROM_GROUP = "dateFrom";
+	private static final String DATE_TO_GROUP = "dateTo";
+	private static final String DATE_REGEXP = "(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):?(\\d{0,2})";
+	
+	private static final String NUMBER_FROM_GROUP = "numberFrom";
+	private static final String NUMBER_TO_GROUP = "numberTo";
+	private static final String NUMBER_REGEXP = "(-?)(0|([1-9][0-9]*))(\\.[0-9]+)?";
+	
+	private static final String SUBSET_REGEXP = "(?<" + AXIS_LABEL_GROUP + ">" + AXIS_LABEL_REGEXP + ")\\((((?<" + NUMBER_FROM_GROUP + ">" + NUMBER_REGEXP + ")[,:]?(?<" + NUMBER_TO_GROUP + ">" + NUMBER_REGEXP + "?))|((\"?(?<" + DATE_FROM_GROUP + ">" + DATE_REGEXP + "))\"?([:,]\"?(?<" + DATE_TO_GROUP + ">" + DATE_REGEXP + ")\"?))?)\\)";
+	private static final Pattern pattern = Pattern.compile(SUBSET_REGEXP);
+	
 	
 	private String service;
 	private String version;
@@ -161,7 +180,7 @@ public class WcsRequestProcessing {
 		return this.coverageRegistry.getDescribeCoverageMetadata(this.coverageId);
 	}
 	
-	public List<WcsRequestProcessingResult> buildMarsRequest() throws CoverageRegistryException {
+	public List<WcsRequestProcessingResult> buildMarsRequest() throws CoverageRegistryException, QueryTranslationException {
 		//List<MarsRequestBuilder> marsRequestBuilders = new ArrayList<>();
 		List<WcsRequestProcessingResult> wcsRequestProcessingResults = new ArrayList<>();
 		
@@ -282,17 +301,21 @@ public class WcsRequestProcessing {
 		return envelope;
 	}*/
 	
-	private MarsRequestBuilder parseProcessCoverageRequest(String processCoveragesRequest) {
+	private MarsRequestBuilder parseProcessCoverageRequest(String processCoveragesRequest) throws QueryTranslationException {
 		MarsRequestBuilder marsRequestBuilder;
-		CharStream stream = CharStreams.fromString(processCoveragesRequest);
-		XWCPSLexer lexer = new XWCPSLexer(stream);
-		XWCPSParser parser = new XWCPSParser(new CommonTokenStream(lexer));
-		
-		ParseTree tree = parser.xwcps();
-		
-		XWCPSEvalVisitor visitor = new XWCPSEvalVisitor(this.coverageRegistry);
-		marsRequestBuilder = visitor.visit(tree);
-		//this.coverageId = visitor.getCoverageId();
+		try {
+			CharStream stream = CharStreams.fromString(processCoveragesRequest);
+			XWCPSLexer lexer = new XWCPSLexer(stream);
+			XWCPSParser parser = new XWCPSParser(new CommonTokenStream(lexer));
+			
+			ParseTree tree = parser.xwcps();
+			
+			XWCPSEvalVisitor visitor = new XWCPSEvalVisitor(this.coverageRegistry);
+			marsRequestBuilder = visitor.visit(tree);
+			//this.coverageId = visitor.getCoverageId();
+		} catch (Exception e) {
+			throw new QueryTranslationException("Error on ProcessCoverages query parsing", e);
+		}
 		
 		return marsRequestBuilder;
 	}
@@ -358,11 +381,44 @@ public class WcsRequestProcessing {
 	}
 	
 	private Pair<String, List<String>> extractAxisEnvelopeFromSubsetQueryParameter(String subset) {
-		String axisLabel = subset.substring(0, subset.indexOf("("));
+		Matcher matcher = pattern.matcher(subset);
+		
+		List<String> subsetRange = new ArrayList<>();
+		String axisLabel = null;
+		
+		if (matcher.find()) {
+			axisLabel = matcher.group(AXIS_LABEL_GROUP);
+			
+			String numberFrom = matcher.group(NUMBER_FROM_GROUP);
+			String numberTo = matcher.group(NUMBER_TO_GROUP);
+			
+			String dateFrom = matcher.group(DATE_FROM_GROUP);
+			String dateTo = matcher.group(DATE_TO_GROUP);
+			
+			if (!Strings.isNullOrEmpty(numberFrom)) {
+				subsetRange.add(numberFrom);
+				
+				if (!Strings.isNullOrEmpty(numberTo)) {
+					subsetRange.add(numberTo);
+				}
+			} else if (!Strings.isNullOrEmpty(dateFrom)) {
+				subsetRange.add(dateFrom);
+				
+				if (!Strings.isNullOrEmpty(dateTo)) {
+					subsetRange.add(dateTo);
+				}
+			}
+		}
+		
+		return new Pair<>(axisLabel, subsetRange);
+		
+		/*String axisLabel = subset.substring(0, subset.indexOf("("));
+		String[] test = subset.substring(subset.indexOf("(") + 1, subset.indexOf(")")).split(",");
+		
 		List<String> subsetRange = Arrays.stream(subset.substring(subset.indexOf("(") + 1, subset.indexOf(")")).split(","))
 				.map(range -> range.replaceFirst("^\"", "").replaceFirst("\"$", "")).collect(Collectors.toList());
 		
-		return new Pair<>(axisLabel, subsetRange);
+		return new Pair<>(axisLabel, subsetRange);*/
 	}
 	
 	private List<Double> retrieveAxisDiscreteValues(String coverageId, String axisName) throws CoverageRegistryException {

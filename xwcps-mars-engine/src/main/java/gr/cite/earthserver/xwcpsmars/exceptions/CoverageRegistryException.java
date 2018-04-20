@@ -1,4 +1,4 @@
-package gr.cite.earthserver.xwcpsmars.registry;
+package gr.cite.earthserver.xwcpsmars.exceptions;
 
 public class CoverageRegistryException extends Exception {
 

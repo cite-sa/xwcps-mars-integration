@@ -5,20 +5,21 @@ import com.google.common.io.Resources;
 import gr.cite.earthserver.wcps.parser.XWCPSQueryParser;
 import gr.cite.earthserver.xwcpsmars.application.dto.XwcpsMarsResponse;
 import gr.cite.earthserver.xwcpsmars.application.dto.XwcpsMarsResponseEntity;
-import gr.cite.earthserver.xwcpsmars.application.exceptions.XwcpsMarsException;
-import gr.cite.earthserver.xwcpsmars.application.request.RequestBasicInfo;
-import gr.cite.earthserver.xwcpsmars.application.request.RequestInfo;
-import gr.cite.earthserver.xwcpsmars.application.request.RequestMonitoring;
+import gr.cite.earthserver.xwcpsmars.exceptions.QueryTranslationException;
+import gr.cite.earthserver.xwcpsmars.exceptions.XwcpsMarsException;
+import gr.cite.earthserver.xwcpsmars.mars.request.RequestBasicInfo;
+import gr.cite.earthserver.xwcpsmars.mars.request.RequestInfo;
+import gr.cite.earthserver.xwcpsmars.mars.request.RequestMonitoring;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
-import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
+import gr.cite.earthserver.xwcpsmars.exceptions.MarsClientException;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParametersMapping;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
-import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.exceptions.RasdamanException;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanResponse;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
-import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
+import gr.cite.earthserver.xwcpsmars.exceptions.CoverageRegistryException;
 import gr.cite.earthserver.xwcpsmars.utils.WcsRequestProcessing;
 import gr.cite.earthserver.xwcpsmars.wcs.core.WcsRequestProcessingResult;
 import org.slf4j.Logger;
@@ -53,6 +54,7 @@ public class IntegrationResource {
 	private static final Logger logger = LoggerFactory.getLogger(IntegrationResource.class);
 	private static final ObjectMapper mapper = new ObjectMapper();
 	
+	public static final String INTEGRATION_BASE_PATH = "integration";
 	public static final String REQUESTS_PATH = "requests";
 	public static final String RESPONSES_PATH = "responses";
 	
@@ -90,7 +92,7 @@ public class IntegrationResource {
 	
 	@GET
 	@Path(IntegrationResource.REQUESTS_PATH)
-	public Response wcsRequest(@Context UriInfo wcsRequestUriInfo) throws XwcpsMarsException, CoverageRegistryException {
+	public Response wcsRequest(@Context UriInfo wcsRequestUriInfo) throws XwcpsMarsException, CoverageRegistryException, QueryTranslationException {
 		if (wcsRequestUriInfo.getQueryParameters().isEmpty()) throw new IllegalArgumentException("WCS Request is not valid");
 		
 		try {
@@ -108,11 +110,12 @@ public class IntegrationResource {
 	
 	private String initRequest() {
 		String requestId = UUID.randomUUID().toString();
-		this.requestMonitoring.createRequest(requestId);
+		this.requestMonitoring.createRequest(IntegrationResource.INTEGRATION_BASE_PATH + "/" + IntegrationResource.RESPONSES_PATH,
+			"monitoring/" + IntegrationResource.REQUESTS_PATH, requestId);
 		return requestId;
 	}
 	
-	private Response processRequest(@Context UriInfo wcsRequestUriInfo, String requestId, boolean async) throws XwcpsMarsException, CoverageRegistryException {
+	private Response processRequest(@Context UriInfo wcsRequestUriInfo, String requestId, boolean async) throws XwcpsMarsException, CoverageRegistryException, QueryTranslationException {
 		long translationStart = System.currentTimeMillis();
 		
 		WcsRequestProcessing wcsRequestProcessing = new WcsRequestProcessing(wcsRequestUriInfo.getQueryParameters(),
@@ -193,7 +196,7 @@ public class IntegrationResource {
 			rasdamanResponse = ingestAndQueryRasdaman(requestId, wcsRequestProcessingResult.getCoverageId(), wcsRequestProcessingResult.getMarsParameters(), query);
 			
 			this.requestMonitoring.markRequestAsSuccessful(requestId);
-			logger.error("[" + requestId + "] Request completed successfully");
+			logger.info("[" + requestId + "] Request completed successfully");
 		} catch (MarsClientException | RasdamanException e) {
 			this.requestMonitoring.markRequestAsUnsuccessful(requestId, e);
 			logger.error(e.getMessage(), e);
@@ -214,23 +217,34 @@ public class IntegrationResource {
 		long marsRetrievalStart = System.currentTimeMillis();
 		this.marsClient.retrieve(requestId, marsRequest);
 		long marsRetrievalEnd = System.currentTimeMillis();
+		
+		logger.info("[" + requestId + "] MARS retrieval execution time [" + (marsRetrievalEnd - marsRetrievalStart) + " ms]");
 		this.requestMonitoring.getRequest(requestId).getTimings().setMarsRequest(marsRetrievalEnd - marsRetrievalStart);
 	}
 	
 	private RasdamanResponse ingestAndQueryRasdaman(String requestId, String coverageId, MarsParameters marsParameters, String query) throws RasdamanException {
+		ingest(requestId, coverageId, marsParameters, query);
+		return query(requestId, coverageId, query);
+	}
+	
+	private void ingest(String requestId, String coverageId, MarsParameters marsParameters, String query) throws RasdamanException {
 		this.requestMonitoring.getRequest(requestId).setWcsRequest(query);
-		logger.debug("WCS Request: " + this.requestMonitoring.getRequest(requestId).getWcsRequest());
+		logger.info("[" + requestId + "] WCS Request: " + this.requestMonitoring.getRequest(requestId).getWcsRequest());
 		
 		long rasdamanRegistrationStart = System.currentTimeMillis();
 		this.rasdamanClient.ingest(coverageId, marsParameters, Paths.get(this.marsClient.getTargetPath(), requestId).toString(), requestId);
 		long rasdamanRegistrationEnd = System.currentTimeMillis();
 		
+		logger.info("[" + requestId + "] Rasdaman ingestion execution time [" + (rasdamanRegistrationEnd - rasdamanRegistrationStart) + " ms]");
 		this.requestMonitoring.getRequest(requestId).getTimings().setRasdamanRegistration(rasdamanRegistrationEnd - rasdamanRegistrationStart);
-		
+	}
+	
+	private RasdamanResponse query(String requestId, String coverageId, String query) throws RasdamanException {
 		long rasdamanQueryStart = System.currentTimeMillis();
 		RasdamanResponse rasdamanResponse = this.rasdamanClient.query(coverageId, query, requestId);
 		long rasdamanQueryEnd = System.currentTimeMillis();
 		
+		logger.info("[" + requestId + "] WCS request execution time [" + (rasdamanQueryEnd - rasdamanQueryStart) + " ms]");
 		this.requestMonitoring.getRequest(requestId).getTimings().setWcsRequest(rasdamanQueryEnd - rasdamanQueryStart);
 		
 		return rasdamanResponse;

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Strings;
-import gr.cite.earthserver.xwcpsmars.application.request.InstantSerializer;
+import gr.cite.earthserver.xwcpsmars.mars.request.InstantSerializer;
 
 import java.time.Instant;
 
@@ -17,6 +17,7 @@ import java.time.Instant;
 		"marsRequest",
 		"requestTranslationTime",
 		"marsRequestTime",
+		//"marsRequestActualExecutionTime",
 		"rasdamanRegistrationTime",
 		"wcsRequestTime",
 		"totalTime"
@@ -39,6 +40,9 @@ public class LoggedRequest {
 	
 	@JsonProperty("marsRequestTime")
 	private Long marsRequestTime;
+	
+	/*@JsonProperty("marsRequestActualExecutionTime")
+	private Long marsRequestActualExecutionTime;*/
 	
 	@JsonProperty("rasdamanRegistrationTime")
 	private Long rasdamanRegistrationTime;
@@ -95,6 +99,14 @@ public class LoggedRequest {
 		this.marsRequestTime = marsRequestTime;
 	}
 	
+	/*public Long getMarsRequestActualExecutionTime() {
+		return marsRequestActualExecutionTime;
+	}
+	
+	public void setMarsRequestActualExecutionTime(Long marsRequestActualExecutionTime) {
+		this.marsRequestActualExecutionTime = marsRequestActualExecutionTime;
+	}*/
+	
 	public Long getRasdamanRegistrationTime() {
 		return rasdamanRegistrationTime;
 	}
@@ -140,6 +152,7 @@ public class LoggedRequest {
 	public boolean isCompleted() {
 		return !Strings.isNullOrEmpty(id) &&
 				   startTime != null && endTime != null &&
-				   requestTranslationTime != null && marsRequestTime != null && rasdamanRegistrationTime != null && wcsRequestTime != null;
+				   requestTranslationTime != null && marsRequestTime != null && rasdamanRegistrationTime != null && wcsRequestTime != null &&
+				   !Strings.isNullOrEmpty(marsRequest) && !Strings.isNullOrEmpty(wcsRequest);
 	}
 }

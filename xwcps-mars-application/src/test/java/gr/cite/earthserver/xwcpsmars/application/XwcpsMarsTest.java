@@ -1,13 +1,11 @@
 package gr.cite.earthserver.xwcpsmars.application;
 
-import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 //import gr.cite.earthserver.xwcpsmars.rasdaman.CoverageRegistryRasdamanConnector;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient;
-import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.exceptions.RasdamanException;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
-import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
-import gr.cite.earthserver.xwcpsmars.utils.WcsRequestProcessing;
-import gr.cite.femme.client.FemmeClient;
+import gr.cite.earthserver.xwcpsmars.exceptions.CoverageRegistryException;
+	import gr.cite.femme.client.FemmeClient;
 import gr.cite.femme.client.FemmeException;
 import gr.cite.femme.client.api.FemmeClientAPI;
 import gr.cite.femme.core.model.DataElement;

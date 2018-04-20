@@ -1,8 +1,6 @@
-package gr.cite.earthserver.xwcpsmars.application.request;
+package gr.cite.earthserver.xwcpsmars.mars.request;
 
-import gr.cite.earthserver.xwcpsmars.application.request.RequestInfo.RequestStatus;
-import gr.cite.earthserver.xwcpsmars.application.resources.IntegrationResource;
-import gr.cite.earthserver.xwcpsmars.application.resources.MonitoringResource;
+import gr.cite.earthserver.xwcpsmars.mars.request.RequestInfo.RequestStatus;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
@@ -54,13 +52,13 @@ public class RequestMonitoring {
 		return this.requests.get(requestId);
 	}
 	
-	public RequestInfo createRequest(String requestId) {
+	public RequestInfo createRequest(String responsePollingBasePath, String requestMonitoringBasePath, String requestId) {
 		RequestInfo requestInfo = new RequestInfo(requestId);
 		
 		requestInfo.setId(requestId);
 		requestInfo.setStatus(RequestInfo.RequestStatus.PROCESSING);
-		requestInfo.setPollingEndpoint(buildPollingUri(requestId));
-		requestInfo.setMonitoringEndpoint(buildMonitoringUri(requestId));
+		requestInfo.setPollingEndpoint(buildPollingUri(responsePollingBasePath, requestId));
+		requestInfo.setMonitoringEndpoint(buildMonitoringUri(requestMonitoringBasePath, requestId));
 		requestInfo.setStartTime(Instant.now());
 		
 		return insertRequest(requestInfo);
@@ -80,12 +78,12 @@ public class RequestMonitoring {
 		return this.requests.remove(requestId);
 	}
 	
-	private URI buildPollingUri(String requestId) {
-		return UriBuilder.fromPath(this.applicationHostname).path(IntegrationResource.class).path(IntegrationResource.RESPONSES_PATH).path(requestId).build();
+	private URI buildPollingUri(String pollingBasePath, String requestId) {
+		return UriBuilder.fromPath(this.applicationHostname).path(pollingBasePath).path(requestId).build();
 	}
 	
-	private URI buildMonitoringUri(String requestId) {
-		return UriBuilder.fromPath(this.applicationHostname).path(MonitoringResource.class).path(IntegrationResource.REQUESTS_PATH).path(requestId).build();
+	private URI buildMonitoringUri(String requestMonitoringBasePath, String requestId) {
+		return UriBuilder.fromPath(this.applicationHostname).path(requestMonitoringBasePath).path(requestId).build();
 	}
 	
 	public void markRequestAsSuccessful(String requestId) {

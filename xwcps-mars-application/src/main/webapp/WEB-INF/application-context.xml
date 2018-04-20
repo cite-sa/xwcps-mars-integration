@@ -4,7 +4,6 @@
 	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-
 	<context:property-placeholder location="WEB-INF/xwcps-mars.properties.earthserver2e"/>
 
 	<!--<bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager" p:cache-manager-ref="ehcache"/>
@@ -62,15 +61,16 @@
 		<constructor-arg type="boolean" value="${gr.cite.earthserver.xwcpsmars.debug.deleteIngestedCoverage}"/>
 	</bean>
 
-	<bean id="requestMonitoring" class="gr.cite.earthserver.xwcpsmars.application.request.RequestMonitoring">
+	<bean id="requestMonitoring" class="gr.cite.earthserver.xwcpsmars.mars.request.RequestMonitoring">
 		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.hostname}"/>
 		<constructor-arg type="java.lang.Integer" value="${gr.cite.earthserver.xwcpsmars.monitoring.history.max}"/>
 	</bean>
 
-	<bean id="logStatisticsResource" class="gr.cite.earthserver.xwcpsmars.application.resources.LogReportingResource">
+	<bean id="logReportingResource" class="gr.cite.earthserver.xwcpsmars.application.resources.LogReportingResource">
 		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.logs.path.base}"/>
 		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.logs.path.subdirectory}"/>
 		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.logs.prefix}"/>
+		<constructor-arg type="java.lang.String" value="${gr.cite.earthserver.xwcpsmars.hostname}"/>
 	</bean>
 
 

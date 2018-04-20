@@ -1,5 +1,6 @@
 package gr.cite.earthserver.xwcpsmars.rasdaman;
 
+import gr.cite.earthserver.xwcpsmars.exceptions.RasdamanException;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
 
 public interface RasdamanClientAPI {

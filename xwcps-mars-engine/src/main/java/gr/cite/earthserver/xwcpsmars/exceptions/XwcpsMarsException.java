@@ -1,4 +1,4 @@
-package gr.cite.earthserver.xwcpsmars.application.exceptions;
+package gr.cite.earthserver.xwcpsmars.exceptions;
 
 public class XwcpsMarsException extends Exception {
 	

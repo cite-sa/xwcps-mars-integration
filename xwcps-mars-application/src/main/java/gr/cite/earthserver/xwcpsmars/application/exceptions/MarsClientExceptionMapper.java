@@ -1,7 +1,7 @@
 package gr.cite.earthserver.xwcpsmars.application.exceptions;
 
 import gr.cite.earthserver.xwcpsmars.application.dto.XwcpsMarsResponse;
-import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
+import gr.cite.earthserver.xwcpsmars.exceptions.MarsClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,8 +23,8 @@ public class MarsClientExceptionMapper implements ExceptionMapper<MarsClientExce
 		response.setStatus(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
 		response.setMessage(exception.getMessage());
 		
-		/*if (exception.getCause() != null) {
-			response.setDeveloperMessage(exception.getCause().getMessage());
+		/*if (exceptions.getCause() != null) {
+			response.setDeveloperMessage(exceptions.getCause().getMessage());
 		}*/
 		
 		return Response.status(response.getStatus()).entity(response).type(MediaType.APPLICATION_JSON).build();

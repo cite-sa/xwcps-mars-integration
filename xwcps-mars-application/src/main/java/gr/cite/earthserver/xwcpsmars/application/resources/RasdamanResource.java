@@ -4,7 +4,7 @@ import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParameters;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParametersMapping;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
-import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.exceptions.RasdamanException;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

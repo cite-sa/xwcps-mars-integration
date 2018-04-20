@@ -3,7 +3,7 @@ package gr.cite.earthserver.xwcpsmars.mocks;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
-import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
+import gr.cite.earthserver.xwcpsmars.exceptions.MarsClientException;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -97,5 +96,10 @@ public class MarsClientMock implements MarsClientAPI {
 	public void cleanupMarsFiles(String marsTargetFilename) throws MarsClientException {
 
 	}
-
+	
+	@Override
+	public Long calculateRequestTime(String marsTargetFile) throws MarsClientException {
+		return null;
+	}
+	
 }

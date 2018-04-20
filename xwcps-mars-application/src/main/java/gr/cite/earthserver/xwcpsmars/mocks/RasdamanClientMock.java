@@ -13,7 +13,7 @@ import gr.cite.earthserver.wcs.core.WCSRequestException;
 import gr.cite.earthserver.wcs.core.WCSResponse;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClient;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanClientAPI;
-import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanException;
+import gr.cite.earthserver.xwcpsmars.exceptions.RasdamanException;
 import gr.cite.earthserver.xwcpsmars.rasdaman.RasdamanResponse;
 import org.glassfish.jersey.uri.UriComponent;
 import org.slf4j.Logger;

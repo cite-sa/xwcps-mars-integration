@@ -1,7 +1,7 @@
 package gr.cite.earthserver.xwcpsmars.application.resources;
 
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
-import gr.cite.earthserver.xwcpsmars.mars.MarsClientException;
+import gr.cite.earthserver.xwcpsmars.exceptions.MarsClientException;
 import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

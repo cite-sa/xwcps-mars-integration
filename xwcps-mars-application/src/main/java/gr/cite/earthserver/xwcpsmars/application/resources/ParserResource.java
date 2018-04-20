@@ -3,11 +3,12 @@ package gr.cite.earthserver.xwcpsmars.application.resources;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import gr.cite.earthserver.wcps.parser.XWCPSQueryParser;
+import gr.cite.earthserver.xwcpsmars.exceptions.QueryTranslationException;
 import gr.cite.earthserver.xwcpsmars.wcs.core.WcsRequestProcessingResult;
 import gr.cite.earthserver.xwcpsmars.mars.MarsClientAPI;
 import gr.cite.earthserver.xwcpsmars.mars.MarsParametersMapping;
 import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistry;
-import gr.cite.earthserver.xwcpsmars.registry.CoverageRegistryException;
+import gr.cite.earthserver.xwcpsmars.exceptions.CoverageRegistryException;
 import gr.cite.earthserver.xwcpsmars.utils.WcsRequestProcessing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +65,7 @@ public class ParserResource {
 			wcsRequestProcessingResult.getMarsRequest().setTarget(this.marsClient.getTargetPath() + "/" + UUID.randomUUID().toString());
 
 			return Response.ok(wcsRequestProcessingResult.getMarsRequest()).build();
-		} catch (CoverageRegistryException e) {
+		} catch (QueryTranslationException | CoverageRegistryException e) {
 			throw new WebApplicationException(e.getMessage(), e);
 		}
 	}

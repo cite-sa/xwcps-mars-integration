@@ -1,4 +1,4 @@
-package gr.cite.earthserver.xwcpsmars.application.request;
+package gr.cite.earthserver.xwcpsmars.mars.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

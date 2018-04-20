@@ -1,4 +1,4 @@
-package gr.cite.earthserver.xwcpsmars.application.request;
+package gr.cite.earthserver.xwcpsmars.mars.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -8,7 +8,6 @@ import gr.cite.earthserver.xwcpsmars.mars.MarsRequest;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class RequestInfo {

@@ -2,7 +2,7 @@ gr.cite.earthserver.xwcpsmars.indexModeOn=false
 gr.cite.earthserver.xwcpsmars.debug=true
 gr.cite.earthserver.xwcpsmars.debug.deleteIngestedCoverage=true
 
-gr.cite.earthserver.xwcpsmars.hostname=http://localhost:8080/xwcps-mars
+gr.cite.earthserver.xwcpsmars.hostname=http://localhost:8100/xwcps-mars
 
 gr.cite.earthserver.xwcpsmars.monitoring.history.max=20
 
@@ -25,3 +25,4 @@ gr.cite.earthserver.xwcpsmars.registry.coverage.endpoint=http://localhost:8080/r
 gr.cite.earthserver.xwcpsmars.logs.path.base=/home/kapostolopoulos/Desktop/mars
 gr.cite.earthserver.xwcpsmars.logs.path.subdirectory=archived
 gr.cite.earthserver.xwcpsmars.logs.prefix=mars_logs
+
